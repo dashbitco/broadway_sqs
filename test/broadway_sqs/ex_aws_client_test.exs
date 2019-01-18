@@ -134,7 +134,11 @@ defmodule BroadwaySQS.ExAwsClientTest do
       %{
         opts: [
           queue_name: "my_queue",
-          config: [http_client: FakeHttpClient]
+          config: [
+            http_client: FakeHttpClient,
+            access_key_id: "FAKE_ID",
+            secret_access_key: "FAKE_KEY"
+          ]
         ]
       }
     end
@@ -152,7 +156,9 @@ defmodule BroadwaySQS.ExAwsClientTest do
                       {ExAwsClient,
                        %{
                          config: [
-                           http_client: FakeHttpClient
+                           http_client: FakeHttpClient,
+                           access_key_id: "FAKE_ID",
+                           secret_access_key: "FAKE_KEY"
                          ],
                          queue_name: "my_queue",
                          receive_messages_opts: [max_number_of_messages: 10]
@@ -179,7 +185,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
       {:ok, opts} = base_opts |> Keyword.put(:wait_time_seconds, 0) |> ExAwsClient.init()
       ExAwsClient.receive_messages(10, opts, :a_module)
 
-      assert_received {:http_request_called, %{body: body, url: url}}
+      assert_received {:http_request_called, %{body: body, url: _url}}
       assert body =~ "WaitTimeSeconds=0"
     end
 
@@ -187,7 +193,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
       {:ok, opts} = base_opts |> Keyword.put(:max_number_of_messages, 5) |> ExAwsClient.init()
       ExAwsClient.receive_messages(10, opts, :a_module)
 
-      assert_received {:http_request_called, %{body: body, url: url}}
+      assert_received {:http_request_called, %{body: body, url: _url}}
       assert body =~ "MaxNumberOfMessages=5"
     end
 
@@ -213,7 +219,11 @@ defmodule BroadwaySQS.ExAwsClientTest do
       %{
         opts: [
           queue_name: "my_queue",
-          config: [http_client: FakeHttpClient]
+          config: [
+            http_client: FakeHttpClient,
+            access_key_id: "FAKE_ID",
+            secret_access_key: "FAKE_KEY"
+          ]
         ]
       }
     end
