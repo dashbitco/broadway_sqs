@@ -12,7 +12,6 @@ defmodule BroadwaySQS.SQSClient do
   @type messages :: [Message.t()]
 
   @callback init(opts :: any) :: {:ok, normalized_opts :: any} | {:error, message :: binary}
-  @callback receive_messages(total_demand :: pos_integer, opts :: any, ack_module :: module) ::
-              messages
+  @callback receive_messages(demand :: pos_integer, opts :: any, ack_module :: module) :: messages
   @callback delete_messages(messages, opts :: any) :: no_return
 end

@@ -63,8 +63,8 @@ defmodule BroadwaySQS.ExAwsClient do
   end
 
   @impl true
-  def receive_messages(total_demand, opts, ack_module) do
-    receive_messages_opts = put_max_number_of_messages(opts.receive_messages_opts, total_demand)
+  def receive_messages(demand, opts, ack_module) do
+    receive_messages_opts = put_max_number_of_messages(opts.receive_messages_opts, demand)
 
     opts.queue_name
     |> ExAws.SQS.receive_message(receive_messages_opts)
@@ -97,8 +97,8 @@ defmodule BroadwaySQS.ExAwsClient do
     IO.warn("Unable to fetch events from AWS. Reason: #{inspect(reason)}")
   end
 
-  defp put_max_number_of_messages(receive_messages_opts, total_demand) do
-    max_number_of_messages = min(total_demand, receive_messages_opts[:max_number_of_messages])
+  defp put_max_number_of_messages(receive_messages_opts, demand) do
+    max_number_of_messages = min(demand, receive_messages_opts[:max_number_of_messages])
     Keyword.put(receive_messages_opts, :max_number_of_messages, max_number_of_messages)
   end
 
