@@ -73,7 +73,9 @@ defmodule BroadwaySQS.ExAwsClient do
   end
 
   @impl true
-  def delete_messages(receipts, opts) do
+  def delete_messages(messages, opts) do
+    receipts = Enum.map(messages, &extract_message_receipt/1)
+
     opts.queue_name
     |> ExAws.SQS.delete_message_batch(receipts)
     |> ExAws.request(opts.config)
@@ -98,6 +100,11 @@ defmodule BroadwaySQS.ExAwsClient do
   defp put_max_number_of_messages(receive_messages_opts, total_demand) do
     max_number_of_messages = min(total_demand, receive_messages_opts[:max_number_of_messages])
     Keyword.put(receive_messages_opts, :max_number_of_messages, max_number_of_messages)
+  end
+
+  defp extract_message_receipt(message) do
+    {_, %{receipt: receipt}} = message.acknowledger
+    receipt
   end
 
   defp validate(opts, key, default \\ nil) when is_list(opts) do

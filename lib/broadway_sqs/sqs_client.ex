@@ -7,14 +7,12 @@ defmodule BroadwaySQS.SQSClient do
 
   """
 
-  @type received_messages :: [Broadway.Message.t()]
+  alias Broadway.Message
 
-  @type message_receipt :: %{id: binary, receipt_handle: binary}
-
-  @type message_receipts :: [message_receipt]
+  @type messages :: [Message.t()]
 
   @callback init(opts :: any) :: {:ok, normalized_opts :: any} | {:error, message :: binary}
   @callback receive_messages(total_demand :: pos_integer, opts :: any, ack_module :: module) ::
-              received_messages
-  @callback delete_messages(message_receipts, opts :: any) :: no_return
+              messages
+  @callback delete_messages(messages, opts :: any) :: no_return
 end

@@ -233,8 +233,8 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
       ExAwsClient.delete_messages(
         [
-          %{id: "1", receipt_handle: "abc"},
-          %{id: "2", receipt_handle: "def"}
+          %Message{acknowledger: {:a_module, %{receipt: %{id: "1", receipt_handle: "abc"}}}},
+          %Message{acknowledger: {:a_module, %{receipt: %{id: "2", receipt_handle: "def"}}}}
         ],
         opts
       )
@@ -259,7 +259,9 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
       {:ok, opts} = Keyword.put(base_opts, :config, config) |> ExAwsClient.init()
 
-      ExAwsClient.delete_messages([%{id: "1", receipt_handle: "abc"}], opts)
+      message = %Message{acknowledger: {:a_module, %{receipt: %{id: "1", receipt_handle: "abc"}}}}
+
+      ExAwsClient.delete_messages([message], opts)
 
       assert_received {:http_request_called, %{url: url}}
       assert url == "http://localhost:9324/my_queue"

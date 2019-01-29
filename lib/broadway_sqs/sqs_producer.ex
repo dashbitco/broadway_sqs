@@ -108,13 +108,7 @@ defmodule BroadwaySQS.SQSProducer do
 
   defp delete_messages_from_sqs(messages) do
     [%Message{acknowledger: {_, %{sqs_client: {client, opts}}}} | _] = messages
-    receipts = Enum.map(messages, &extract_message_receipt/1)
-    client.delete_messages(receipts, opts)
-  end
-
-  defp extract_message_receipt(message) do
-    {_, %{receipt: receipt}} = message.acknowledger
-    receipt
+    client.delete_messages(messages, opts)
   end
 
   defp schedule_receive_messages(interval) do
