@@ -42,11 +42,13 @@ defmodule BroadwaySQS.ExAwsClient do
 
   """
 
+  alias Broadway.{Message, Acknowledger}
+
   @behaviour BroadwaySQS.SQSClient
+  @behaviour Acknowledger
 
   @default_max_number_of_messages 10
-
-  alias Broadway.Message
+  @max_num_messages_allowed_by_aws 10
 
   @impl true
   def init(opts) do
@@ -63,41 +65,55 @@ defmodule BroadwaySQS.ExAwsClient do
   end
 
   @impl true
-  def receive_messages(total_demand, opts, ack_module) do
-    receive_messages_opts = put_max_number_of_messages(opts.receive_messages_opts, total_demand)
+  def receive_messages(demand, opts) do
+    receive_messages_opts = put_max_number_of_messages(opts.receive_messages_opts, demand)
 
     opts.queue_name
     |> ExAws.SQS.receive_message(receive_messages_opts)
     |> ExAws.request(opts.config)
-    |> wrap_received_messages(opts, ack_module)
+    |> wrap_received_messages(opts)
   end
 
   @impl true
-  def delete_messages(receipts, opts) do
+  def ack(successful, _failed) do
+    successful
+    |> Enum.chunk_every(@max_num_messages_allowed_by_aws)
+    |> Enum.each(&delete_messages/1)
+  end
+
+  defp delete_messages(messages) do
+    [%Message{acknowledger: {_, %{sqs_client_opts: opts}}} | _] = messages
+    receipts = Enum.map(messages, &extract_message_receipt/1)
+
     opts.queue_name
     |> ExAws.SQS.delete_message_batch(receipts)
     |> ExAws.request(opts.config)
   end
 
-  defp wrap_received_messages({:ok, %{body: body}}, opts, ack_module) do
+  defp wrap_received_messages({:ok, %{body: body}}, opts) do
     Enum.map(body.messages, fn message ->
       ack_data = %{
         receipt: %{id: message.message_id, receipt_handle: message.receipt_handle},
-        sqs_client: {__MODULE__, opts}
+        sqs_client_opts: opts
       }
 
-      %Message{data: message.body, acknowledger: {ack_module, ack_data}}
+      %Message{data: message.body, acknowledger: {__MODULE__, ack_data}}
     end)
   end
 
-  defp wrap_received_messages({:error, reason}, _, _) do
+  defp wrap_received_messages({:error, reason}, _) do
     # TODO: Treat errors properly
     IO.warn("Unable to fetch events from AWS. Reason: #{inspect(reason)}")
   end
 
-  defp put_max_number_of_messages(receive_messages_opts, total_demand) do
-    max_number_of_messages = min(total_demand, receive_messages_opts[:max_number_of_messages])
+  defp put_max_number_of_messages(receive_messages_opts, demand) do
+    max_number_of_messages = min(demand, receive_messages_opts[:max_number_of_messages])
     Keyword.put(receive_messages_opts, :max_number_of_messages, max_number_of_messages)
+  end
+
+  defp extract_message_receipt(message) do
+    {_, %{receipt: receipt}} = message.acknowledger
+    receipt
   end
 
   defp validate(opts, key, default \\ nil) when is_list(opts) do

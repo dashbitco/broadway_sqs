@@ -34,11 +34,6 @@ defmodule BroadwaySQS.SQSProducer do
 
   use GenStage
 
-  alias Broadway.{Message, Acknowledger}
-
-  @behaviour Acknowledger
-
-  @max_num_messages_allowed_by_aws 10
   @default_receive_interval 5000
 
   @impl true
@@ -76,13 +71,6 @@ defmodule BroadwaySQS.SQSProducer do
     {:noreply, [], state}
   end
 
-  @impl Acknowledger
-  def ack(successful, _failed) do
-    successful
-    |> Enum.chunk_every(@max_num_messages_allowed_by_aws)
-    |> Enum.each(&delete_messages_from_sqs/1)
-  end
-
   def handle_receive_messages(%{receive_timer: nil, demand: demand} = state) when demand > 0 do
     messages = receive_messages_from_sqs(state, demand)
     new_demand = demand - length(messages)
@@ -103,18 +91,7 @@ defmodule BroadwaySQS.SQSProducer do
 
   defp receive_messages_from_sqs(state, total_demand) do
     %{sqs_client: {client, opts}} = state
-    client.receive_messages(total_demand, opts, __MODULE__)
-  end
-
-  defp delete_messages_from_sqs(messages) do
-    [%Message{acknowledger: {_, %{sqs_client: {client, opts}}}} | _] = messages
-    receipts = Enum.map(messages, &extract_message_receipt/1)
-    client.delete_messages(receipts, opts)
-  end
-
-  defp extract_message_receipt(message) do
-    {_, %{receipt: receipt}} = message.acknowledger
-    receipt
+    client.receive_messages(total_demand, opts)
   end
 
   defp schedule_receive_messages(interval) do
