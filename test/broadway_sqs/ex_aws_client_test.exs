@@ -152,17 +152,15 @@ defmodule BroadwaySQS.ExAwsClientTest do
                  {ExAwsClient,
                   %{
                     receipt: %{id: "Id_1", receipt_handle: "ReceiptHandle_1"},
-                    sqs_client:
-                      {ExAwsClient,
-                       %{
-                         config: [
-                           http_client: FakeHttpClient,
-                           access_key_id: "FAKE_ID",
-                           secret_access_key: "FAKE_KEY"
-                         ],
-                         queue_name: "my_queue",
-                         receive_messages_opts: [max_number_of_messages: 10]
-                       }}
+                    sqs_client_opts: %{
+                      config: [
+                        http_client: FakeHttpClient,
+                        access_key_id: "FAKE_ID",
+                        secret_access_key: "FAKE_KEY"
+                      ],
+                      queue_name: "my_queue",
+                      receive_messages_opts: [max_number_of_messages: 10]
+                    }
                   }},
                data: "Message 1",
                processor_pid: nil,
@@ -230,8 +228,8 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
     test "send a SQS/DeleteMessageBatch request", %{opts: base_opts} do
       {:ok, opts} = ExAwsClient.init(base_opts)
-      ack_data_1 = %{sqs_client: {ExAwsClient, opts}, receipt: %{id: "1", receipt_handle: "abc"}}
-      ack_data_2 = %{sqs_client: {ExAwsClient, opts}, receipt: %{id: "2", receipt_handle: "def"}}
+      ack_data_1 = %{sqs_client_opts: opts, receipt: %{id: "1", receipt_handle: "abc"}}
+      ack_data_2 = %{sqs_client_opts: opts, receipt: %{id: "2", receipt_handle: "def"}}
 
       ExAwsClient.ack(
         [
@@ -261,7 +259,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
       {:ok, opts} = Keyword.put(base_opts, :config, config) |> ExAwsClient.init()
 
-      ack_data = %{sqs_client: {ExAwsClient, opts}, receipt: %{id: "1", receipt_handle: "abc"}}
+      ack_data = %{sqs_client_opts: opts, receipt: %{id: "1", receipt_handle: "abc"}}
       message = %Message{acknowledger: {ExAwsClient, ack_data}}
 
       ExAwsClient.ack([message], [])

@@ -82,7 +82,7 @@ defmodule BroadwaySQS.ExAwsClient do
   end
 
   defp delete_messages(messages) do
-    [%Message{acknowledger: {_, %{sqs_client: {_, opts}}}} | _] = messages
+    [%Message{acknowledger: {_, %{sqs_client_opts: opts}}} | _] = messages
     receipts = Enum.map(messages, &extract_message_receipt/1)
 
     opts.queue_name
@@ -94,7 +94,7 @@ defmodule BroadwaySQS.ExAwsClient do
     Enum.map(body.messages, fn message ->
       ack_data = %{
         receipt: %{id: message.message_id, receipt_handle: message.receipt_handle},
-        sqs_client: {__MODULE__, opts}
+        sqs_client_opts: opts
       }
 
       %Message{data: message.body, acknowledger: {__MODULE__, ack_data}}
