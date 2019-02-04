@@ -20,28 +20,31 @@ defmodule BroadwaySQS.SQSProducerTest do
 
   defmodule FakeSQSClient do
     @behaviour BroadwaySQS.SQSClient
+    @behaviour Broadway.Acknowledger
 
     @impl true
     def init(opts), do: {:ok, opts}
 
     @impl true
-    def receive_messages(amount, opts, ack_module) do
+    def receive_messages(amount, opts) do
       messages = MessageServer.take_messages(opts.message_server, amount)
       send(opts.test_pid, {:messages_received, length(messages)})
 
       for msg <- messages do
         ack_data = %{
           receipt: %{id: "Id_#{msg}", receipt_handle: "ReceiptHandle_#{msg}"},
-          sqs_client: {__MODULE__, opts}
+          sqs_client: {__MODULE__, opts},
+          test_pid: opts.test_pid
         }
 
-        %Message{data: msg, acknowledger: {ack_module, ack_data}}
+        %Message{data: msg, acknowledger: {__MODULE__, ack_data}}
       end
     end
 
     @impl true
-    def delete_messages(receipts, opts) do
-      send(opts.test_pid, {:messages_deleted, length(receipts)})
+    def ack(successful, _failed) do
+      [%Message{acknowledger: {_, %{test_pid: test_pid}}} | _] = successful
+      send(test_pid, {:messages_deleted, length(successful)})
     end
   end
 

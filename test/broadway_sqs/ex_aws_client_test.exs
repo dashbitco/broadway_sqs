@@ -145,11 +145,11 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
     test "returns a list of Broadway.Message with :data and :acknowledger set", %{opts: base_opts} do
       {:ok, opts} = ExAwsClient.init(base_opts)
-      [message1, message2] = ExAwsClient.receive_messages(10, opts, :a_module)
+      [message1, message2] = ExAwsClient.receive_messages(10, opts)
 
       assert message1 == %Message{
                acknowledger:
-                 {:a_module,
+                 {ExAwsClient,
                   %{
                     receipt: %{id: "Id_1", receipt_handle: "ReceiptHandle_1"},
                     sqs_client:
@@ -174,7 +174,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
     test "send a SQS/ReceiveMessage request with default options", %{opts: base_opts} do
       {:ok, opts} = ExAwsClient.init(base_opts)
-      ExAwsClient.receive_messages(10, opts, :a_module)
+      ExAwsClient.receive_messages(10, opts)
 
       assert_received {:http_request_called, %{body: body, url: url}}
       assert body == "Action=ReceiveMessage&MaxNumberOfMessages=10"
@@ -183,7 +183,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
     test "request with custom :wait_time_seconds", %{opts: base_opts} do
       {:ok, opts} = base_opts |> Keyword.put(:wait_time_seconds, 0) |> ExAwsClient.init()
-      ExAwsClient.receive_messages(10, opts, :a_module)
+      ExAwsClient.receive_messages(10, opts)
 
       assert_received {:http_request_called, %{body: body, url: _url}}
       assert body =~ "WaitTimeSeconds=0"
@@ -191,7 +191,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
     test "request with custom :max_number_of_messages", %{opts: base_opts} do
       {:ok, opts} = base_opts |> Keyword.put(:max_number_of_messages, 5) |> ExAwsClient.init()
-      ExAwsClient.receive_messages(10, opts, :a_module)
+      ExAwsClient.receive_messages(10, opts)
 
       assert_received {:http_request_called, %{body: body, url: _url}}
       assert body =~ "MaxNumberOfMessages=5"
@@ -207,14 +207,14 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
       {:ok, opts} = Keyword.put(base_opts, :config, config) |> ExAwsClient.init()
 
-      ExAwsClient.receive_messages(10, opts, :a_module)
+      ExAwsClient.receive_messages(10, opts)
 
       assert_received {:http_request_called, %{url: url}}
       assert url == "http://localhost:9324/my_queue"
     end
   end
 
-  describe "delete_messages/2" do
+  describe "ack/2" do
     setup do
       %{
         opts: [
@@ -230,13 +230,15 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
     test "send a SQS/DeleteMessageBatch request", %{opts: base_opts} do
       {:ok, opts} = ExAwsClient.init(base_opts)
+      ack_data_1 = %{sqs_client: {ExAwsClient, opts}, receipt: %{id: "1", receipt_handle: "abc"}}
+      ack_data_2 = %{sqs_client: {ExAwsClient, opts}, receipt: %{id: "2", receipt_handle: "def"}}
 
-      ExAwsClient.delete_messages(
+      ExAwsClient.ack(
         [
-          %Message{acknowledger: {:a_module, %{receipt: %{id: "1", receipt_handle: "abc"}}}},
-          %Message{acknowledger: {:a_module, %{receipt: %{id: "2", receipt_handle: "def"}}}}
+          %Message{acknowledger: {ExAwsClient, ack_data_1}},
+          %Message{acknowledger: {ExAwsClient, ack_data_2}}
         ],
-        opts
+        []
       )
 
       assert_received {:http_request_called, %{body: body, url: url}}
@@ -259,9 +261,10 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
       {:ok, opts} = Keyword.put(base_opts, :config, config) |> ExAwsClient.init()
 
-      message = %Message{acknowledger: {:a_module, %{receipt: %{id: "1", receipt_handle: "abc"}}}}
+      ack_data = %{sqs_client: {ExAwsClient, opts}, receipt: %{id: "1", receipt_handle: "abc"}}
+      message = %Message{acknowledger: {ExAwsClient, ack_data}}
 
-      ExAwsClient.delete_messages([message], opts)
+      ExAwsClient.ack([message], [])
 
       assert_received {:http_request_called, %{url: url}}
       assert url == "http://localhost:9324/my_queue"
