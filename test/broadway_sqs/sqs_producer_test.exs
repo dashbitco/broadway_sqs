@@ -53,11 +53,11 @@ defmodule BroadwaySQS.SQSProducerTest do
 
     def handle_message(message, %{test_pid: test_pid}) do
       send(test_pid, {:message_handled, message.data})
-      {:ok, message}
+      message
     end
 
     def handle_batch(_, messages, _, _) do
-      {:ack, successful: messages, failed: []}
+      messages
     end
   end
 
@@ -146,8 +146,9 @@ defmodule BroadwaySQS.SQSProducerTest do
   end
 
   defp start_broadway(message_server) do
-    Broadway.start_link(Forwarder, %{test_pid: self()},
+    Broadway.start_link(Forwarder,
       name: new_unique_name(),
+      context: %{test_pid: self()},
       producers: [
         default: [
           module: SQSProducer,

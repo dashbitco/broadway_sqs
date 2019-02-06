@@ -30,7 +30,7 @@ end
 Configure Broadway with one or more producers using `BroadwaySQS.SQSProducer`:
 
 ```elixir
-Broadway.start_link(MyBroadway, %{},
+Broadway.start_link(MyBroadway,
   name: MyBroadway,
   producers: [
     default: [
