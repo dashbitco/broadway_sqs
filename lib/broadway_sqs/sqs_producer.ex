@@ -12,7 +12,7 @@ defmodule BroadwaySQS.SQSProducer do
 
   ### Example
 
-      Broadway.start_link(MyBroadway, %{},
+      Broadway.start_link(MyBroadway,
         name: MyBroadway,
         producers: [
           default: [
