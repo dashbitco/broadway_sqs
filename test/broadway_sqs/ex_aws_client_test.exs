@@ -163,8 +163,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
                     }
                   }},
                data: "Message 1",
-               processor_pid: nil,
-               publisher: :default
+               batcher: :default
              }
 
       assert message2.data == "Message 2"
@@ -233,8 +232,8 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
       ExAwsClient.ack(
         [
-          %Message{acknowledger: {ExAwsClient, ack_data_1}},
-          %Message{acknowledger: {ExAwsClient, ack_data_2}}
+          %Message{acknowledger: {ExAwsClient, ack_data_1}, data: nil},
+          %Message{acknowledger: {ExAwsClient, ack_data_2}, data: nil}
         ],
         []
       )
@@ -260,7 +259,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
       {:ok, opts} = Keyword.put(base_opts, :config, config) |> ExAwsClient.init()
 
       ack_data = %{sqs_client_opts: opts, receipt: %{id: "1", receipt_handle: "abc"}}
-      message = %Message{acknowledger: {ExAwsClient, ack_data}}
+      message = %Message{acknowledger: {ExAwsClient, ack_data}, data: nil}
 
       ExAwsClient.ack([message], [])
 

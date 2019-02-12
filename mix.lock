@@ -1,5 +1,5 @@
 %{
-  "broadway": {:git, "https://github.com/plataformatec/broadway.git", "7d5814769aa901310b18206357c86f26548ca2e9", []},
+  "broadway": {:git, "https://github.com/plataformatec/broadway.git", "b49255b0038ab6633726d2f488d2f5a9baa62763", []},
   "certifi": {:hex, :certifi, "2.4.2", "75424ff0f3baaccfd34b1214184b6ef616d89e420b258bb0a5ea7d7bc628f7f0", [:rebar3], [{:parse_trans, "~>3.3", [hex: :parse_trans, repo: "hexpm", optional: false]}], "hexpm"},
   "ex_aws": {:hex, :ex_aws, "2.0.2", "8df2f96f58624a399abe5a0ce26db648ee848aca6393b9c65c939ece9ac07bfa", [:mix], [{:configparser_ex, "~> 2.0", [hex: :configparser_ex, repo: "hexpm", optional: true]}, {:hackney, "1.6.3 or 1.6.5 or 1.7.1 or 1.8.6 or ~> 1.9", [hex: :hackney, repo: "hexpm", optional: true]}, {:jsx, "~> 2.8", [hex: :jsx, repo: "hexpm", optional: true]}, {:poison, ">= 1.2.0", [hex: :poison, repo: "hexpm", optional: true]}, {:sweet_xml, "~> 0.6", [hex: :sweet_xml, repo: "hexpm", optional: true]}, {:xml_builder, "~> 0.1.0", [hex: :xml_builder, repo: "hexpm", optional: true]}], "hexpm"},
   "ex_aws_sqs": {:hex, :ex_aws_sqs, "2.0.0", "ead66c34b0828c12cff49e7aa9b7be3c6b9f6c682303b6ca2333c26af26d1ba5", [:mix], [{:ex_aws, "~> 2.0.0", [hex: :ex_aws, repo: "hexpm", optional: false]}], "hexpm"},

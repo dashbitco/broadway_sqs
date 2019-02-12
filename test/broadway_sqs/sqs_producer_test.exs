@@ -51,7 +51,7 @@ defmodule BroadwaySQS.SQSProducerTest do
   defmodule Forwarder do
     use Broadway
 
-    def handle_message(message, %{test_pid: test_pid}) do
+    def handle_message(_, message, %{test_pid: test_pid}) do
       send(test_pid, {:message_handled, message.data})
       message
     end
@@ -164,8 +164,10 @@ defmodule BroadwaySQS.SQSProducerTest do
           stages: 1
         ]
       ],
-      processors: [stages: 1],
-      publishers: [
+      processors: [
+        default: [stages: 1]
+      ],
+      batchers: [
         default: [
           batch_size: 10,
           batch_timeout: 50,
