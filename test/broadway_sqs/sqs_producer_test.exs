@@ -33,17 +33,16 @@ defmodule BroadwaySQS.SQSProducerTest do
       for msg <- messages do
         ack_data = %{
           receipt: %{id: "Id_#{msg}", receipt_handle: "ReceiptHandle_#{msg}"},
-          sqs_client: {__MODULE__, opts},
           test_pid: opts.test_pid
         }
 
-        %Message{data: msg, acknowledger: {__MODULE__, ack_data}}
+        %Message{data: msg, acknowledger: {__MODULE__, :ack_ref, ack_data}}
       end
     end
 
     @impl true
-    def ack(successful, _failed) do
-      [%Message{acknowledger: {_, %{test_pid: test_pid}}} | _] = successful
+    def ack(_ack_ref, successful, _failed) do
+      [%Message{acknowledger: {_, _, %{test_pid: test_pid}}} | _] = successful
       send(test_pid, {:messages_deleted, length(successful)})
     end
   end

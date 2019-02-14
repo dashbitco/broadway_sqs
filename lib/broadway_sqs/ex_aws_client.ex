@@ -55,11 +55,14 @@ defmodule BroadwaySQS.ExAwsClient do
     with {:ok, queue_name} <- validate(opts, :queue_name),
          {:ok, receive_messages_opts} <- validate_receive_messages_opts(opts),
          {:ok, config} <- validate(opts, :config, []) do
+      ack_ref = Broadway.TermStorage.put(%{queue_name: queue_name, config: config})
+
       {:ok,
        %{
          queue_name: queue_name,
          receive_messages_opts: receive_messages_opts,
-         config: config
+         config: config,
+         ack_ref: ack_ref
        }}
     end
   end
@@ -71,33 +74,33 @@ defmodule BroadwaySQS.ExAwsClient do
     opts.queue_name
     |> ExAws.SQS.receive_message(receive_messages_opts)
     |> ExAws.request(opts.config)
-    |> wrap_received_messages(opts)
+    |> wrap_received_messages(opts.ack_ref)
   end
 
   @impl true
-  def ack(successful, _failed) do
+  def ack(ack_ref, successful, _failed) do
     successful
     |> Enum.chunk_every(@max_num_messages_allowed_by_aws)
-    |> Enum.each(&delete_messages/1)
+    |> Enum.each(fn messages -> delete_messages(messages, ack_ref) end)
   end
 
-  defp delete_messages(messages) do
-    [%Message{acknowledger: {_, %{sqs_client_opts: opts}}} | _] = messages
+  defp delete_messages(messages, ack_ref) do
     receipts = Enum.map(messages, &extract_message_receipt/1)
+
+    opts = Broadway.TermStorage.get!(ack_ref)
 
     opts.queue_name
     |> ExAws.SQS.delete_message_batch(receipts)
     |> ExAws.request(opts.config)
   end
 
-  defp wrap_received_messages({:ok, %{body: body}}, opts) do
+  defp wrap_received_messages({:ok, %{body: body}}, ack_ref) do
     Enum.map(body.messages, fn message ->
       ack_data = %{
-        receipt: %{id: message.message_id, receipt_handle: message.receipt_handle},
-        sqs_client_opts: opts
+        receipt: %{id: message.message_id, receipt_handle: message.receipt_handle}
       }
 
-      %Message{data: message.body, acknowledger: {__MODULE__, ack_data}}
+      %Message{data: message.body, acknowledger: {__MODULE__, ack_ref, ack_data}}
     end)
   end
 
@@ -112,7 +115,7 @@ defmodule BroadwaySQS.ExAwsClient do
   end
 
   defp extract_message_receipt(message) do
-    {_, %{receipt: receipt}} = message.acknowledger
+    {_, _, %{receipt: receipt}} = message.acknowledger
     receipt
   end
 

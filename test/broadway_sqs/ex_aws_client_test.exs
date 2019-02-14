@@ -149,19 +149,8 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
       assert message1 == %Message{
                acknowledger:
-                 {ExAwsClient,
-                  %{
-                    receipt: %{id: "Id_1", receipt_handle: "ReceiptHandle_1"},
-                    sqs_client_opts: %{
-                      config: [
-                        http_client: FakeHttpClient,
-                        access_key_id: "FAKE_ID",
-                        secret_access_key: "FAKE_KEY"
-                      ],
-                      queue_name: "my_queue",
-                      receive_messages_opts: [max_number_of_messages: 10]
-                    }
-                  }},
+                 {ExAwsClient, opts.ack_ref,
+                  %{receipt: %{id: "Id_1", receipt_handle: "ReceiptHandle_1"}}},
                data: "Message 1",
                batcher: :default
              }
@@ -231,9 +220,10 @@ defmodule BroadwaySQS.ExAwsClientTest do
       ack_data_2 = %{sqs_client_opts: opts, receipt: %{id: "2", receipt_handle: "def"}}
 
       ExAwsClient.ack(
+        opts.ack_ref,
         [
-          %Message{acknowledger: {ExAwsClient, ack_data_1}, data: nil},
-          %Message{acknowledger: {ExAwsClient, ack_data_2}, data: nil}
+          %Message{acknowledger: {ExAwsClient, opts.ack_ref, ack_data_1}, data: nil},
+          %Message{acknowledger: {ExAwsClient, opts.ack_ref, ack_data_2}, data: nil}
         ],
         []
       )
@@ -258,10 +248,10 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
       {:ok, opts} = Keyword.put(base_opts, :config, config) |> ExAwsClient.init()
 
-      ack_data = %{sqs_client_opts: opts, receipt: %{id: "1", receipt_handle: "abc"}}
-      message = %Message{acknowledger: {ExAwsClient, ack_data}, data: nil}
+      ack_data = %{receipt: %{id: "1", receipt_handle: "abc"}}
+      message = %Message{acknowledger: {ExAwsClient, opts.ack_ref, ack_data}, data: nil}
 
-      ExAwsClient.ack([message], [])
+      ExAwsClient.ack(opts.ack_ref, [message], [])
 
       assert_received {:http_request_called, %{url: url}}
       assert url == "http://localhost:9324/my_queue"
