@@ -43,6 +43,7 @@ defmodule BroadwaySQS.ExAwsClient do
   """
 
   alias Broadway.{Message, Acknowledger}
+  require Logger
 
   @behaviour BroadwaySQS.SQSClient
   @behaviour Acknowledger
@@ -105,8 +106,7 @@ defmodule BroadwaySQS.ExAwsClient do
   end
 
   defp wrap_received_messages({:error, reason}, _) do
-    # TODO: Treat errors properly
-    IO.warn("Unable to fetch events from AWS. Reason: #{inspect(reason)}")
+    Logger.error("Unable to fetch events from AWS. Reason: #{inspect(reason)}")
   end
 
   defp put_max_number_of_messages(receive_messages_opts, demand) do
