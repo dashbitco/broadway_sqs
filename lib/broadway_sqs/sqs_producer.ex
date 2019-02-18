@@ -38,10 +38,10 @@ defmodule BroadwaySQS.SQSProducer do
 
   @impl true
   def init(opts) do
-    {client, client_opts} = opts[:sqs_client] || {BroadwaySQS.ExAwsClient, []}
+    client = opts[:sqs_client] || BroadwaySQS.ExAwsClient
     receive_interval = opts[:receive_interval] || @default_receive_interval
 
-    case client.init(client_opts) do
+    case client.init(opts) do
       {:error, message} ->
         raise ArgumentError, "invalid options given to #{inspect(client)}.init/1, " <> message
 
