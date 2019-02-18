@@ -1,7 +1,6 @@
-defmodule BroadwaySQS.SQSProducerTest do
+defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
   use ExUnit.Case
 
-  alias BroadwaySQS.SQSProducer
   alias Broadway.Message
 
   defmodule MessageServer do
@@ -27,13 +26,13 @@ defmodule BroadwaySQS.SQSProducerTest do
 
     @impl true
     def receive_messages(amount, opts) do
-      messages = MessageServer.take_messages(opts.message_server, amount)
-      send(opts.test_pid, {:messages_received, length(messages)})
+      messages = MessageServer.take_messages(opts[:message_server], amount)
+      send(opts[:test_pid], {:messages_received, length(messages)})
 
       for msg <- messages do
         ack_data = %{
           receipt: %{id: "Id_#{msg}", receipt_handle: "ReceiptHandle_#{msg}"},
-          test_pid: opts.test_pid
+          test_pid: opts[:test_pid]
         }
 
         %Message{data: msg, acknowledger: {__MODULE__, :ack_ref, ack_data}}
@@ -65,7 +64,7 @@ defmodule BroadwaySQS.SQSProducerTest do
       ArgumentError,
       "invalid options given to BroadwaySQS.ExAwsClient.init/1, expected :queue_name to be a non empty string, got: nil",
       fn ->
-        SQSProducer.init(queue_name: nil)
+        BroadwaySQS.Producer.init(queue_name: nil)
       end
     )
   end
@@ -150,16 +149,12 @@ defmodule BroadwaySQS.SQSProducerTest do
       context: %{test_pid: self()},
       producers: [
         default: [
-          module: SQSProducer,
-          arg: [
-            receive_interval: 0,
-            sqs_client:
-              {FakeSQSClient,
-               %{
-                 test_pid: self(),
-                 message_server: message_server
-               }}
-          ],
+          module:
+            {BroadwaySQS.Producer,
+             sqs_client: FakeSQSClient,
+             receive_interval: 0,
+             test_pid: self(),
+             message_server: message_server},
           stages: 1
         ]
       ],

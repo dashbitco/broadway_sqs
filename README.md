@@ -34,14 +34,9 @@ Broadway.start_link(MyBroadway,
   name: MyBroadway,
   producers: [
     default: [
-      module: BroadwaySQS.SQSProducer,
-      arg: [
-        sqs_client: {BroadwaySQS.ExAwsClient, [
-          queue_name: "my_queue",
-        ]}
-      ],
-    ],
-  ],
+      module: {BroadwaySQS.SQSProducer, queue_name: "my_queue"}
+    ]
+  ]
 )
 ```
 

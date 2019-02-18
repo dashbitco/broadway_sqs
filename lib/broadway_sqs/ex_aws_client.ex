@@ -3,43 +3,6 @@ defmodule BroadwaySQS.ExAwsClient do
   Default SQS client used by `BroadwaySQS.SQSProducer` to communicate with AWS
   SQS service. This client implements the `BroadwaySQS.SQSClient` behaviour which
   defines callbacks for receiving and acknowledging messages.
-
-  ## Options
-
-    * `:queue_name` - Required. The name of the queue.
-    * `:max_number_of_messages` - Optional. The maximum number of messages to be fetched
-      per request. This value must be between `1` and `10`, which is the maximun number
-      allowed by AWS. Default is `10`.
-    * `:wait_time_seconds` - Optional. The duration (in seconds) for which the call waits
-      for a message to arrive in the queue before returning.
-    * `:config` - Optional. A set of options that overrides the default ExAws configuration
-      options. The most commonly used options are: `:access_key_id`, `:secret_access_key`,
-      `:scheme`, `:region` and `:port`. For a complete list of configuration options and
-      their default values, please see the `ExAws` documentation.
-
-  ### Example
-
-      Broadway.start_link(MyBroadway,
-        name: MyBroadway,
-        producers: [
-          default: [
-            module: BroadwaySQS.SQSProducer,
-            arg: [
-              sqs_client: {BroadwaySQS.ExAwsClient, [
-                queue_name: "queue/my_local_queue",
-                wait_time_seconds: 2,
-                max_number_of_messages: 5,
-                config: [
-                  scheme: "http://",
-                  host: "localhost",
-                  port: 9324
-                ]
-              ]}
-            ],
-          ],
-        ],
-      )
-
   """
 
   alias Broadway.{Message, Acknowledger}

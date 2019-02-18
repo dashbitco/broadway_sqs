@@ -1,14 +1,31 @@
-defmodule BroadwaySQS.SQSProducer do
+defmodule BroadwaySQS.Producer do
   @moduledoc """
   A GenStage producer that continuously receives messages from a SQS queue and
   acknowledge them after being successfully processed.
 
-  ## Options
+  ## Options using ExAwsClient (Default)
 
-    * `:sqs_client` - Optional. A tuple defining the client (and its options) responsible
-      for fetching and acknowledging the messages. Default is `{ExAwsClient, []}`.
+    * `:queue_name` - Required. The name of the queue.
+    * `:max_number_of_messages` - Optional. The maximum number of messages to be fetched
+      per request. This value must be between `1` and `10`, which is the maximun number
+      allowed by AWS. Default is `10`.
+    * `:wait_time_seconds` - Optional. The duration (in seconds) for which the call waits
+      for a message to arrive in the queue before returning.
+    * `:config` - Optional. A set of options that overrides the default ExAws configuration
+      options. The most commonly used options are: `:access_key_id`, `:secret_access_key`,
+      `:scheme`, `:region` and `:port`. For a complete list of configuration options and
+      their default values, please see the `ExAws` documentation.
+
+  ## Additional options
+
+    * `:sqs_client` - Optional. A module that implements the `BroadwaySQS.SQSClient`
+      behaviour. This module is responsible for fetching and acknowledging the
+      messages. Pay attention that all options passed to the producer will be forwarded
+      to the client. It's up to the client to normalize the options it needs. Default
+      is `ExAwsClient`.
     * `:receive_interval` - Optional. The duration (in milliseconds) for which the producer
       waits before making a request for more messages. Default is 5000.
+
 
   ### Example
 
@@ -16,20 +33,19 @@ defmodule BroadwaySQS.SQSProducer do
         name: MyBroadway,
         producers: [
           default: [
-            module: BroadwaySQS.SQSProducer,
-            arg: [
-              sqs_client: {BroadwaySQS.ExAwsClient, [
-                queue_name: "my_queue",
-              ]}
-            ],
-          ],
-        ],
+            module: {BroadwaySQS.Producer,
+              queue_name: "my_queue",
+              config: [
+                access_key_id: "YOUR_AWS_ACCESS_KEY_ID",
+                secret_access_key: "YOUR_AWS_SECRET_ACCESS_KEY"
+              ]
+            }
+          ]
+        ]
       )
 
   The above configuration will set up a producer that continuously receives messages from `"my_queue"`
-  and sends them downstream. In case you want to tune you configuration, see all options
-  provided by `BroadwaySQS.ExAwsClient`.
-
+  and sends them downstream.
   """
 
   use GenStage
@@ -38,10 +54,10 @@ defmodule BroadwaySQS.SQSProducer do
 
   @impl true
   def init(opts) do
-    {client, client_opts} = opts[:sqs_client] || {BroadwaySQS.ExAwsClient, []}
+    client = opts[:sqs_client] || BroadwaySQS.ExAwsClient
     receive_interval = opts[:receive_interval] || @default_receive_interval
 
-    case client.init(client_opts) do
+    case client.init(opts) do
       {:error, message} ->
         raise ArgumentError, "invalid options given to #{inspect(client)}.init/1, " <> message
 
