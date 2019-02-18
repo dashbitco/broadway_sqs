@@ -1,7 +1,6 @@
-defmodule BroadwaySQS.SQSProducerTest do
+defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
   use ExUnit.Case
 
-  alias BroadwaySQS.SQSProducer
   alias Broadway.Message
 
   defmodule MessageServer do
@@ -65,7 +64,7 @@ defmodule BroadwaySQS.SQSProducerTest do
       ArgumentError,
       "invalid options given to BroadwaySQS.ExAwsClient.init/1, expected :queue_name to be a non empty string, got: nil",
       fn ->
-        SQSProducer.init(queue_name: nil)
+        BroadwaySQS.Producer.init(queue_name: nil)
       end
     )
   end
@@ -151,7 +150,7 @@ defmodule BroadwaySQS.SQSProducerTest do
       producers: [
         default: [
           module:
-            {SQSProducer,
+            {BroadwaySQS.Producer,
              sqs_client: FakeSQSClient,
              receive_interval: 0,
              test_pid: self(),
