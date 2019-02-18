@@ -4,10 +4,10 @@ A AWS SQS connector for [Broadway](https://github.com/plataformatec/broadway).
 
 This project provides:
 
-  * `BroadwaySQS.SQSProducer` - A GenStage producer that continuously receives messages from
+  * `BroadwaySQS.Producer` - A GenStage producer that continuously receives messages from
     a SQS queue and acknowledge them after being successfully processed.
   * `BroadwaySQS.SQSClient` - A generic behaviour to implement SQS clients.
-  * `BroadwaySQS.ExAwsClient` - Default SQS client used by `BroadwaySQS.SQSProducer`.
+  * `BroadwaySQS.ExAwsClient` - Default SQS client used by `BroadwaySQS.Producer`.
 
 
 ## Installation
@@ -27,14 +27,14 @@ end
 
 ## Usage
 
-Configure Broadway with one or more producers using `BroadwaySQS.SQSProducer`:
+Configure Broadway with one or more producers using `BroadwaySQS.Producer`:
 
 ```elixir
 Broadway.start_link(MyBroadway,
   name: MyBroadway,
   producers: [
     default: [
-      module: {BroadwaySQS.SQSProducer, queue_name: "my_queue"}
+      module: {BroadwaySQS.Producer, queue_name: "my_queue"}
     ]
   ]
 )

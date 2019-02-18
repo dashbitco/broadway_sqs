@@ -1,9 +1,9 @@
 defmodule BroadwaySQS.SQSClient do
   @moduledoc """
-  A generic behaviour to implement SQS CLients for `BroadwaySQS.SQSProducer`.
+  A generic behaviour to implement SQS Clients for `BroadwaySQS.Producer`.
   This module defines callbacks to normalize options and receive message
   from a SQS queue. Modules that implement this behaviour should be passed
-  as the `:sqs_client` option from `BroadwaySQS.SQSProducer`.
+  as the `:sqs_client` option from `BroadwaySQS.Producer`.
 
   """
 
