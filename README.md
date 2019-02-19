@@ -2,6 +2,10 @@
 
 A AWS SQS connector for [Broadway](https://github.com/plataformatec/broadway).
 
+Documentation can be found at [https://hexdocs.pm/broadway_sqs](https://hexdocs.pm/broadway_sqs).
+For more details on using Broadway with Amazon SQS, please see the
+[Amazon SQS Guide](https://hexdocs.pm/broadway/amazon-sqs.html).
+
 This project provides:
 
   * `BroadwaySQS.Producer` - A GenStage producer that continuously receives messages from
@@ -12,15 +16,14 @@ This project provides:
 
 ## Installation
 
-Add `:broadway_sqs` to the list of dependencies in `mix.exs` along with `:broadway` and
-the HTTP client of your choice (defaults to `:hackney`):
+Add `:broadway_sqs` to the list of dependencies in `mix.exs` along with the HTTP
+client of your choice (defaults to `:hackney`):
 
 ```elixir
 def deps do
   [
-    {:broadway, "~> 0.1.0"},
     {:broadway_sqs, "~> 0.1.0"},
-    {:hackney, "~> 1.9"},
+    {:hackney, "~> 1.9"}
   ]
 end
 ```
