@@ -38,7 +38,7 @@ defmodule BroadwaySqs.MixProject do
     [
       main: "BroadwaySQS.Producer",
       source_ref: "v#{@version}",
-      source_url: "https://github.com/plataformatec/broadway_sqs",
+      source_url: "https://github.com/plataformatec/broadway_sqs"
     ]
   end
 
