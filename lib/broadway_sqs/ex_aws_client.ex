@@ -99,24 +99,24 @@ defmodule BroadwaySQS.ExAwsClient do
     do: validation_error(:wait_time_seconds, "a non negative integer", value)
 
   defp validate_option(:max_number_of_messages, value)
-       when value not in 1..@max_num_messages_allowed_by_aws,
-       do:
-         validation_error(
-           :max_number_of_messages,
-           "an integer between 1 and #{@max_num_messages_allowed_by_aws}",
-           value
-         )
+       when value not in 1..@max_num_messages_allowed_by_aws do
+    validation_error(
+      :max_number_of_messages,
+      "an integer between 1 and #{@max_num_messages_allowed_by_aws}",
+      value
+    )
+  end
 
   defp validate_option(:visibility_timeout, nil), do: {:ok, nil}
 
   defp validate_option(:visibility_timeout, value)
-       when value not in 0..@max_visibility_timeout_allowed_by_aws_in_seconds,
-       do:
-         validation_error(
-           :visibility_timeout,
-           "an integer between 0 and #{@max_visibility_timeout_allowed_by_aws_in_seconds}",
-           value
-         )
+       when value not in 0..@max_visibility_timeout_allowed_by_aws_in_seconds do
+    validation_error(
+      :visibility_timeout,
+      "an integer between 0 and #{@max_visibility_timeout_allowed_by_aws_in_seconds}",
+      value
+    )
+  end
 
   defp validate_option(_, value), do: {:ok, value}
 
