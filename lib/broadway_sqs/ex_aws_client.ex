@@ -128,8 +128,7 @@ defmodule BroadwaySQS.ExAwsClient do
     with {:ok, wait_time_seconds} <- validate(opts, :wait_time_seconds),
          {:ok, max_number_of_messages} <-
            validate(opts, :max_number_of_messages, @default_max_number_of_messages),
-         {:ok, visibility_timeout} <-
-           validate(opts, :visibility_timeout) do
+         {:ok, visibility_timeout} <- validate(opts, :visibility_timeout) do
       wait_time_seconds_opt =
         if wait_time_seconds, do: [wait_time_seconds: wait_time_seconds], else: []
 
