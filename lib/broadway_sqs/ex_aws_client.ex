@@ -13,6 +13,7 @@ defmodule BroadwaySQS.ExAwsClient do
 
   @default_max_number_of_messages 10
   @max_num_messages_allowed_by_aws 10
+  @max_visibility_timeout_allowed_by_aws_in_seconds 12 * 60 * 60
 
   @impl true
   def init(opts) do
@@ -97,8 +98,25 @@ defmodule BroadwaySQS.ExAwsClient do
   defp validate_option(:wait_time_seconds, value) when not is_integer(value) or value < 0,
     do: validation_error(:wait_time_seconds, "a non negative integer", value)
 
-  defp validate_option(:max_number_of_messages, value) when value not in 1..10,
-    do: validation_error(:max_number_of_messages, "a integer between 1 and 10", value)
+  defp validate_option(:max_number_of_messages, value)
+       when value not in 1..@max_num_messages_allowed_by_aws,
+       do:
+         validation_error(
+           :max_number_of_messages,
+           "an integer between 1 and #{@max_num_messages_allowed_by_aws}",
+           value
+         )
+
+  defp validate_option(:visibility_timeout, nil), do: {:ok, nil}
+
+  defp validate_option(:visibility_timeout, value)
+       when value not in 0..@max_visibility_timeout_allowed_by_aws_in_seconds,
+       do:
+         validation_error(
+           :visibility_timeout,
+           "an integer between 0 and #{@max_visibility_timeout_allowed_by_aws_in_seconds}",
+           value
+         )
 
   defp validate_option(_, value), do: {:ok, value}
 
@@ -109,11 +127,18 @@ defmodule BroadwaySQS.ExAwsClient do
   defp validate_receive_messages_opts(opts) do
     with {:ok, wait_time_seconds} <- validate(opts, :wait_time_seconds),
          {:ok, max_number_of_messages} <-
-           validate(opts, :max_number_of_messages, @default_max_number_of_messages) do
+           validate(opts, :max_number_of_messages, @default_max_number_of_messages),
+         {:ok, visibility_timeout} <-
+           validate(opts, :visibility_timeout) do
       wait_time_seconds_opt =
         if wait_time_seconds, do: [wait_time_seconds: wait_time_seconds], else: []
 
-      {:ok, [max_number_of_messages: max_number_of_messages] ++ wait_time_seconds_opt}
+      visibility_timeout_opt =
+        if visibility_timeout, do: [visibility_timeout: visibility_timeout], else: []
+
+      {:ok,
+       [max_number_of_messages: max_number_of_messages] ++
+         wait_time_seconds_opt ++ visibility_timeout_opt}
     end
   end
 end
