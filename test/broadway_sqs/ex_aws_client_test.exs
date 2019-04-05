@@ -3,6 +3,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
   alias BroadwaySQS.ExAwsClient
   alias Broadway.Message
+  import ExUnit.CaptureLog
 
   defmodule FakeHttpClient do
     @behaviour ExAws.Request.HttpClient
@@ -34,6 +35,14 @@ defmodule BroadwaySQS.ExAwsClientTest do
       send(self(), {:http_request_called, %{url: url, body: body}})
 
       {:ok, %{status_code: 200, body: "<DeleteMessageBatchResponse />"}}
+    end
+  end
+
+  defmodule FakeHttpClientWithError do
+    @behaviour ExAws.Request.HttpClient
+
+    def request(:post, _url, "Action=ReceiveMessage" <> _, _, _) do
+      {:error, %{reason: "Fake error"}}
     end
   end
 
@@ -137,7 +146,8 @@ defmodule BroadwaySQS.ExAwsClientTest do
           config: [
             http_client: FakeHttpClient,
             access_key_id: "FAKE_ID",
-            secret_access_key: "FAKE_KEY"
+            secret_access_key: "FAKE_KEY",
+            retries: [max_attempts: 0]
           ]
         ]
       }
@@ -156,6 +166,17 @@ defmodule BroadwaySQS.ExAwsClientTest do
              }
 
       assert message2.data == "Message 2"
+    end
+
+    test "if the request fails, returns an empty list and log the error", %{opts: base_opts} do
+      {:ok, opts} =
+        base_opts
+        |> put_in([:config, :http_client], FakeHttpClientWithError)
+        |> ExAwsClient.init()
+
+      assert capture_log(fn ->
+               assert ExAwsClient.receive_messages(10, opts) == []
+             end) =~ "[error] Unable to fetch events from AWS. Reason: \"Fake error\""
     end
 
     test "send a SQS/ReceiveMessage request with default options", %{opts: base_opts} do
