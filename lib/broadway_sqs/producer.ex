@@ -11,6 +11,10 @@ defmodule BroadwaySQS.Producer do
       allowed by AWS. Default is `10`.
     * `:wait_time_seconds` - Optional. The duration (in seconds) for which the call waits
       for a message to arrive in the queue before returning.
+    * `:visibility_timeout` - Optional. The time period (in seconds) that a message will
+      remain _invisible_ to other consumers whilst still on the queue and not acknowledged.
+      This is passed to SQS when the message (or messages) are read.
+      This value must be between 0 and 43200 (12 hours).
     * `:config` - Optional. A set of options that overrides the default ExAws configuration
       options. The most commonly used options are: `:access_key_id`, `:secret_access_key`,
       `:scheme`, `:region` and `:port`. For a complete list of configuration options and
