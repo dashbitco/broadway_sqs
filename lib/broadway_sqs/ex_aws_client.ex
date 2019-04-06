@@ -43,6 +43,11 @@ defmodule BroadwaySQS.ExAwsClient do
   end
 
   @impl true
+  def receipt(%Message{acknowledger: {_, _, receipt}}) do
+    {:ok, receipt}
+  end
+
+  @impl true
   def ack(ack_ref, successful, _failed) do
     successful
     |> Enum.chunk_every(@max_num_messages_allowed_by_aws)

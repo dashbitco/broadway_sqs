@@ -336,4 +336,34 @@ defmodule BroadwaySQS.ExAwsClientTest do
       assert url == "http://localhost:9324/my_queue"
     end
   end
+
+  describe "message receipt provision" do
+    setup do
+      %{
+        opts: [
+          queue_name: "my_queue",
+          config: [
+            http_client: FakeHttpClient,
+            access_key_id: "FAKE_ID",
+            secret_access_key: "FAKE_KEY"
+          ]
+        ]
+      }
+    end
+
+    test "obtain the correct message receipts", %{opts: base_opts} do
+      {:ok, opts} = ExAwsClient.init(base_opts)
+      messages = ExAwsClient.receive_messages(10, opts)
+
+      messages
+      |> Enum.with_index(1)
+      |> Enum.map(fn
+        {msg, index} ->
+          {:ok, %{receipt: %{id: id, receipt_handle: handle}}} = ExAwsClient.receipt(msg)
+
+          assert id == "Id_#{index}"
+          assert(handle == "ReceiptHandle_#{index}")
+      end)
+    end
+  end
 end
