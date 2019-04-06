@@ -106,18 +106,18 @@ defmodule BroadwaySQS.ExAwsClientTest do
       {:error, message} = opts |> Keyword.put(:max_number_of_messages, 0) |> ExAwsClient.init()
 
       assert message ==
-               "expected :max_number_of_messages to be a integer between 1 and 10, got: 0"
+               "expected :max_number_of_messages to be an integer between 1 and 10, got: 0"
 
       {:error, message} = opts |> Keyword.put(:max_number_of_messages, 11) |> ExAwsClient.init()
 
       assert message ==
-               "expected :max_number_of_messages to be a integer between 1 and 10, got: 11"
+               "expected :max_number_of_messages to be an integer between 1 and 10, got: 11"
 
       {:error, message} =
         opts |> Keyword.put(:max_number_of_messages, :an_atom) |> ExAwsClient.init()
 
       assert message ==
-               "expected :max_number_of_messages to be a integer between 1 and 10, got: :an_atom"
+               "expected :max_number_of_messages to be an integer between 1 and 10, got: :an_atom"
     end
 
     test ":config is optional with default value []" do
@@ -135,6 +135,64 @@ defmodule BroadwaySQS.ExAwsClientTest do
       config = :an_atom
       {:error, message} = opts |> Keyword.put(:config, config) |> ExAwsClient.init()
       assert message == "expected :config to be a keyword list, got: :an_atom"
+    end
+
+    test ":visibility_timeout should be a non negative integer" do
+      opts = [queue_name: "my_queue"]
+
+      {:ok, result} = opts |> Keyword.put(:visibility_timeout, 0) |> ExAwsClient.init()
+      assert result.receive_messages_opts[:visibility_timeout] == 0
+
+      {:ok, result} = opts |> Keyword.put(:visibility_timeout, 256) |> ExAwsClient.init()
+      assert result.receive_messages_opts[:visibility_timeout] == 256
+
+      {:error, message} = opts |> Keyword.put(:visibility_timeout, -1) |> ExAwsClient.init()
+
+      assert message ==
+               "expected :visibility_timeout to be an integer between 0 and 43200, got: -1"
+
+      {:error, message} = opts |> Keyword.put(:visibility_timeout, :an_atom) |> ExAwsClient.init()
+
+      assert message ==
+               "expected :visibility_timeout to be an integer between 0 and 43200, got: :an_atom"
+    end
+
+    test ":visibility_timeout is optional without default value" do
+      {:ok, result} = ExAwsClient.init(queue_name: "my_queue")
+
+      refute Keyword.has_key?(result.receive_messages_opts, :visibility_timeout)
+    end
+
+    test ":visibility_timeout should be an integer between 0 seconds and 12 hours" do
+      opts = [queue_name: "my_queue"]
+
+      {:ok, result} = opts |> Keyword.put(:visibility_timeout, 0) |> ExAwsClient.init()
+      assert result.receive_messages_opts[:visibility_timeout] == 0
+
+      max_visibility_timeout = 12 * 60 * 60
+
+      {:ok, result} =
+        opts |> Keyword.put(:visibility_timeout, max_visibility_timeout) |> ExAwsClient.init()
+
+      assert result.receive_messages_opts[:visibility_timeout] == max_visibility_timeout
+
+      {:error, message} = opts |> Keyword.put(:visibility_timeout, -1) |> ExAwsClient.init()
+
+      assert message ==
+               "expected :visibility_timeout to be an integer between 0 and 43200, got: -1"
+
+      one_day_in_seconds = 24 * 60 * 60
+
+      {:error, message} =
+        opts |> Keyword.put(:visibility_timeout, one_day_in_seconds) |> ExAwsClient.init()
+
+      assert message ==
+               "expected :visibility_timeout to be an integer between 0 and 43200, got: 86400"
+
+      {:error, message} = opts |> Keyword.put(:visibility_timeout, :an_atom) |> ExAwsClient.init()
+
+      assert message ==
+               "expected :visibility_timeout to be an integer between 0 and 43200, got: :an_atom"
     end
   end
 

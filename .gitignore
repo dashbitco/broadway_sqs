@@ -23,3 +23,4 @@ erl_crash.dump
 broadway_sqs-*.tar
 
 .elixir_ls
+.tool-versions
