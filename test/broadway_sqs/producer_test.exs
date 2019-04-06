@@ -44,6 +44,11 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
       [%Message{acknowledger: {_, _, %{test_pid: test_pid}}} | _] = successful
       send(test_pid, {:messages_deleted, length(successful)})
     end
+
+    @impl true
+    def receipt(_) do
+      {:error, :incompatible_producer}
+    end
   end
 
   defmodule Forwarder do
@@ -51,6 +56,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
     def handle_message(_, message, %{test_pid: test_pid}) do
       send(test_pid, {:message_handled, message.data})
+      send(test_pid, {:handled_message, message})
       message
     end
 
@@ -139,6 +145,19 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
     assert_receive {:messages_deleted, 10}
     assert_receive {:messages_deleted, 10}
+
+    stop_broadway(pid)
+  end
+
+  test "cannot get a message receipt from incompatible producer" do
+    {:ok, message_server} = MessageServer.start_link()
+    {:ok, pid} = start_broadway(message_server)
+
+    MessageServer.push_messages(message_server, 1..1)
+
+    assert_receive {:handled_message, msg}
+
+    assert BroadwaySQS.Producer.receipt(msg) == {:error, :incompatible_producer}
 
     stop_broadway(pid)
   end

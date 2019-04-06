@@ -109,6 +109,15 @@ defmodule BroadwaySQS.Producer do
     {:noreply, [], state}
   end
 
+  @doc """
+  Provide the message receipt (if possible) to allow the caller to use it
+  directly in their code.
+  """
+  @spec receipt(Broadway.Message.t()) :: any()
+  def receipt(%Broadway.Message{acknowledger: {client, _, _}} = message) do
+    client.receipt(message)
+  end
+
   defp receive_messages_from_sqs(state, total_demand) do
     %{sqs_client: {client, opts}} = state
     client.receive_messages(total_demand, opts)
