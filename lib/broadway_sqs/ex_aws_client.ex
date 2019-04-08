@@ -43,9 +43,15 @@ defmodule BroadwaySQS.ExAwsClient do
   end
 
   @impl true
-  def receipt(%Message{acknowledger: {_, _, receipt}}) do
-    {:ok, receipt}
+  def receipt(%Message{acknowledger: {_, _, receipt}}) when is_map(receipt) do
+    if Map.has_key?(receipt, :receipt) do
+      {:ok, Map.fetch!(receipt, :receipt)}
+    else
+      {:error, :receipt_not_found}
+    end
   end
+
+  def receipt(%Message{acknowledger: {_, _, nil}}), do: {:error, :receipt_not_found}
 
   @impl true
   def ack(ack_ref, successful, _failed) do

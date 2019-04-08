@@ -55,8 +55,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     use Broadway
 
     def handle_message(_, message, %{test_pid: test_pid}) do
-      send(test_pid, {:message_handled, message.data})
-      send(test_pid, {:handled_message, message})
+      send(test_pid, {:message_handled, message.data, message})
       message
     end
 
@@ -84,7 +83,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     assert_receive {:messages_received, 5}
 
     for msg <- 1..5 do
-      assert_receive {:message_handled, ^msg}
+      assert_receive {:message_handled, ^msg, _}
     end
 
     stop_broadway(pid)
@@ -98,19 +97,19 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     assert_receive {:messages_received, 10}
 
     for msg <- 1..10 do
-      assert_receive {:message_handled, ^msg}
+      assert_receive {:message_handled, ^msg, _}
     end
 
     assert_receive {:messages_received, 5}
 
     for msg <- 11..15 do
-      assert_receive {:message_handled, ^msg}
+      assert_receive {:message_handled, ^msg, _}
     end
 
     assert_receive {:messages_received, 5}
 
     for msg <- 16..20 do
-      assert_receive {:message_handled, ^msg}
+      assert_receive {:message_handled, ^msg, _}
     end
 
     assert_receive {:messages_received, 0}
@@ -124,15 +123,15 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
     MessageServer.push_messages(message_server, [13])
     assert_receive {:messages_received, 1}
-    assert_receive {:message_handled, 13}
+    assert_receive {:message_handled, 13, _}
 
     assert_receive {:messages_received, 0}
-    refute_receive {:message_handled, _}
+    refute_receive {:message_handled, _, _}
 
     MessageServer.push_messages(message_server, [14, 15])
     assert_receive {:messages_received, 2}
-    assert_receive {:message_handled, 14}
-    assert_receive {:message_handled, 15}
+    assert_receive {:message_handled, 14, _}
+    assert_receive {:message_handled, 15, _}
 
     stop_broadway(pid)
   end
@@ -155,7 +154,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
     MessageServer.push_messages(message_server, 1..1)
 
-    assert_receive {:handled_message, msg}
+    assert_receive {:message_handled, _, msg}
 
     assert BroadwaySQS.Producer.receipt(msg) == {:error, :incompatible_producer}
 

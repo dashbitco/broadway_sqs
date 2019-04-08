@@ -353,17 +353,21 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
     test "obtain the correct message receipts", %{opts: base_opts} do
       {:ok, opts} = ExAwsClient.init(base_opts)
-      messages = ExAwsClient.receive_messages(10, opts)
+      [msg | _] = ExAwsClient.receive_messages(10, opts)
 
-      messages
-      |> Enum.with_index(1)
-      |> Enum.map(fn
-        {msg, index} ->
-          {:ok, %{receipt: %{id: id, receipt_handle: handle}}} = ExAwsClient.receipt(msg)
+      {:ok, %{id: id, receipt_handle: handle}} = ExAwsClient.receipt(msg)
 
-          assert id == "Id_#{index}"
-          assert(handle == "ReceiptHandle_#{index}")
-      end)
+      assert id == "Id_1"
+      assert handle == "ReceiptHandle_1"
+    end
+
+    test "deal with error case", %{opts: base_opts} do
+      {:ok, opts} = ExAwsClient.init(base_opts)
+      message = %Message{acknowledger: {ExAwsClient, opts.ack_ref, nil}, data: nil}
+
+      {:error, e} = ExAwsClient.receipt(message)
+
+      assert e == :receipt_not_found
     end
   end
 end
