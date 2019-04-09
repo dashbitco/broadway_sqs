@@ -336,4 +336,38 @@ defmodule BroadwaySQS.ExAwsClientTest do
       assert url == "http://localhost:9324/my_queue"
     end
   end
+
+  describe "message receipt provision" do
+    setup do
+      %{
+        opts: [
+          queue_name: "my_queue",
+          config: [
+            http_client: FakeHttpClient,
+            access_key_id: "FAKE_ID",
+            secret_access_key: "FAKE_KEY"
+          ]
+        ]
+      }
+    end
+
+    test "obtain the correct message receipts", %{opts: base_opts} do
+      {:ok, opts} = ExAwsClient.init(base_opts)
+      [msg | _] = ExAwsClient.receive_messages(10, opts)
+
+      {:ok, %{id: id, receipt_handle: handle}} = ExAwsClient.receipt(msg)
+
+      assert id == "Id_1"
+      assert handle == "ReceiptHandle_1"
+    end
+
+    test "deal with error case", %{opts: base_opts} do
+      {:ok, opts} = ExAwsClient.init(base_opts)
+      message = %Message{acknowledger: {ExAwsClient, opts.ack_ref, nil}, data: nil}
+
+      {:error, e} = ExAwsClient.receipt(message)
+
+      assert e == :receipt_not_found
+    end
+  end
 end
