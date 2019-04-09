@@ -113,7 +113,10 @@ defmodule BroadwaySQS.Producer do
   Provide the message receipt (if possible) to allow the caller to use it
   directly in their code.
   """
-  @spec receipt(Broadway.Message.t()) :: any()
+  @spec receipt(Broadway.Message.t()) ::
+          {:ok, receipt :: any()}
+          | {:error, :incompatible_producer}
+          | {:error, :receipt_not_found}
   def receipt(%Broadway.Message{acknowledger: {client, _, _}} = message) do
     client.receipt(message)
   end
