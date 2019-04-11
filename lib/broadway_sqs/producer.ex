@@ -1,6 +1,6 @@
 defmodule BroadwaySQS.Producer do
   @moduledoc """
-  A GenStage producer that continuously receives messages from a SQS queue and
+  A GenStage producer that continuously polls messages from a SQS queue and
   acknowledge them after being successfully processed.
 
   ## Options using ExAwsClient (Default)
@@ -30,7 +30,6 @@ defmodule BroadwaySQS.Producer do
     * `:receive_interval` - Optional. The duration (in milliseconds) for which the producer
       waits before making a request for more messages. Default is 5000.
 
-
   ### Example
 
       Broadway.start_link(MyBroadway,
@@ -48,9 +47,24 @@ defmodule BroadwaySQS.Producer do
         ]
       )
 
-  The above configuration will set up a producer that continuously receives messages from `"my_queue"`
-  and sends them downstream.
+  The above configuration will set up a producer that continuously receives
+  messages from `"my_queue"` and sends them downstream.
+
+  If you need to access the SQS message receipt while processing a
+  `Broadway.Message`, you can invoke `receipt/1`.
   """
+
+  @doc """
+  Provide the message receipt (if possible) to allow the caller to use it
+  directly in their code.
+  """
+  @spec receipt(Broadway.Message.t()) ::
+          {:ok, receipt :: any()}
+          | {:error, :incompatible_producer}
+          | {:error, :receipt_not_found}
+  def receipt(%Broadway.Message{acknowledger: {client, _, _}} = message) do
+    client.receipt(message)
+  end
 
   use GenStage
 
@@ -91,7 +105,7 @@ defmodule BroadwaySQS.Producer do
     {:noreply, [], state}
   end
 
-  def handle_receive_messages(%{receive_timer: nil, demand: demand} = state) when demand > 0 do
+  defp handle_receive_messages(%{receive_timer: nil, demand: demand} = state) when demand > 0 do
     messages = receive_messages_from_sqs(state, demand)
     new_demand = demand - length(messages)
 
@@ -105,20 +119,8 @@ defmodule BroadwaySQS.Producer do
     {:noreply, messages, %{state | demand: new_demand, receive_timer: receive_timer}}
   end
 
-  def handle_receive_messages(state) do
+  defp handle_receive_messages(state) do
     {:noreply, [], state}
-  end
-
-  @doc """
-  Provide the message receipt (if possible) to allow the caller to use it
-  directly in their code.
-  """
-  @spec receipt(Broadway.Message.t()) ::
-          {:ok, receipt :: any()}
-          | {:error, :incompatible_producer}
-          | {:error, :receipt_not_found}
-  def receipt(%Broadway.Message{acknowledger: {client, _, _}} = message) do
-    client.receipt(message)
   end
 
   defp receive_messages_from_sqs(state, total_demand) do
