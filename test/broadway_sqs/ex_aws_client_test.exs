@@ -65,7 +65,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
   describe "validate init options" do
     test ":queue_name is required" do
       assert ExAwsClient.init([]) ==
-               {:error, "expected :queue_name to be a non empty string, got: nil"}
+               {:error, ":queue_name is required"}
 
       assert ExAwsClient.init(queue_name: nil) ==
                {:error, "expected :queue_name to be a non empty string, got: nil"}

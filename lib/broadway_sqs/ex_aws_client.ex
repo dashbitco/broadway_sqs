@@ -25,9 +25,9 @@ defmodule BroadwaySQS.ExAwsClient do
 
   @impl true
   def init(opts) do
-    with {:ok, queue_name} <- validate(opts, :queue_name),
+    with {:ok, queue_name} <- validate(opts, :queue_name, required: true),
          {:ok, receive_messages_opts} <- validate_receive_messages_opts(opts),
-         {:ok, config} <- validate(opts, :config, []) do
+         {:ok, config} <- validate(opts, :config, default: []) do
       ack_ref = Broadway.TermStorage.put(%{queue_name: queue_name, config: config})
 
       {:ok,
@@ -95,8 +95,24 @@ defmodule BroadwaySQS.ExAwsClient do
     receipt
   end
 
-  defp validate(opts, key, default \\ nil) when is_list(opts) do
-    validate_option(key, opts[key] || default)
+  defp validate(opts, key, options \\ []) when is_list(opts) do
+    has_key = Keyword.has_key?(opts, key)
+    required = Keyword.get(options, :required, false)
+    default = Keyword.get(options, :default)
+
+    cond do
+      has_key ->
+        validate_option(key, opts[key])
+
+      required ->
+        {:error, "#{inspect(key)} is required"}
+
+      default != nil ->
+        validate_option(key, default)
+
+      true ->
+        {:ok, nil}
+    end
   end
 
   defp validate_option(:config, value) when not is_list(value),
@@ -104,8 +120,6 @@ defmodule BroadwaySQS.ExAwsClient do
 
   defp validate_option(:queue_name, value) when not is_binary(value) or value == "",
     do: validation_error(:queue_name, "a non empty string", value)
-
-  defp validate_option(:wait_time_seconds, nil), do: {:ok, nil}
 
   defp validate_option(:wait_time_seconds, value) when not is_integer(value) or value < 0,
     do: validation_error(:wait_time_seconds, "a non negative integer", value)
@@ -119,8 +133,6 @@ defmodule BroadwaySQS.ExAwsClient do
     )
   end
 
-  defp validate_option(:visibility_timeout, nil), do: {:ok, nil}
-
   defp validate_option(:visibility_timeout, value)
        when value not in 0..@max_visibility_timeout_allowed_by_aws_in_seconds do
     validation_error(
@@ -133,7 +145,7 @@ defmodule BroadwaySQS.ExAwsClient do
   defp validate_option(:attribute_names, value) do
     supported? = fn name -> name in @supported_attributes end
 
-    if value in [nil, :all] || (is_list(value) && Enum.all?(value, supported?)) do
+    if value == :all || (is_list(value) && Enum.all?(value, supported?)) do
       {:ok, value}
     else
       validation_error(
@@ -147,7 +159,7 @@ defmodule BroadwaySQS.ExAwsClient do
   defp validate_option(:message_attribute_names, value) do
     non_empty_string? = fn name -> is_binary(name) && name != "" end
 
-    if value in [nil, :all] || (is_list(value) && Enum.all?(value, non_empty_string?)) do
+    if value == :all || (is_list(value) && Enum.all?(value, non_empty_string?)) do
       {:ok, value}
     else
       validation_error(:message_attribute_names, ":all or a list of non empty strings", value)
@@ -165,7 +177,7 @@ defmodule BroadwaySQS.ExAwsClient do
          {:ok, attribute_names} <- validate(opts, :attribute_names),
          {:ok, message_attribute_names} <- validate(opts, :message_attribute_names),
          {:ok, max_number_of_messages} <-
-           validate(opts, :max_number_of_messages, @default_max_number_of_messages),
+           validate(opts, :max_number_of_messages, default: @default_max_number_of_messages),
          {:ok, visibility_timeout} <- validate(opts, :visibility_timeout) do
       validated_opts = [
         max_number_of_messages: max_number_of_messages,
