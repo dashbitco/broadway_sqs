@@ -35,7 +35,8 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
           test_pid: opts[:test_pid]
         }
 
-        %Message{data: msg, acknowledger: {__MODULE__, :ack_ref, ack_data}}
+        metadata = %{fake: "FAKE"}
+        %Message{data: msg, metadata: metadata, acknowledger: {__MODULE__, :ack_ref, ack_data}}
       end
     end
 
@@ -44,18 +45,13 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
       [%Message{acknowledger: {_, _, %{test_pid: test_pid}}} | _] = successful
       send(test_pid, {:messages_deleted, length(successful)})
     end
-
-    @impl true
-    def receipt(_) do
-      {:error, :incompatible_producer}
-    end
   end
 
   defmodule Forwarder do
     use Broadway
 
     def handle_message(_, message, %{test_pid: test_pid}) do
-      send(test_pid, {:message_handled, message.data, message})
+      send(test_pid, {:message_handled, message.data, message.metadata})
       message
     end
 
@@ -85,6 +81,16 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     for msg <- 1..5 do
       assert_receive {:message_handled, ^msg, _}
     end
+
+    stop_broadway(pid)
+  end
+
+  test "receive messages with the metadata defined by the SQS client" do
+    {:ok, message_server} = MessageServer.start_link()
+    {:ok, pid} = start_broadway(message_server)
+    MessageServer.push_messages(message_server, 1..5)
+
+    assert_receive {:message_handled, _, %{fake: "FAKE"}}
 
     stop_broadway(pid)
   end
@@ -144,19 +150,6 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
     assert_receive {:messages_deleted, 10}
     assert_receive {:messages_deleted, 10}
-
-    stop_broadway(pid)
-  end
-
-  test "cannot get a message receipt from incompatible producer" do
-    {:ok, message_server} = MessageServer.start_link()
-    {:ok, pid} = start_broadway(message_server)
-
-    MessageServer.push_messages(message_server, 1..1)
-
-    assert_receive {:message_handled, _, msg}
-
-    assert BroadwaySQS.Producer.receipt(msg) == {:error, :incompatible_producer}
 
     stop_broadway(pid)
   end

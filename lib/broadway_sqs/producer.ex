@@ -15,6 +15,16 @@ defmodule BroadwaySQS.Producer do
       remain _invisible_ to other consumers whilst still on the queue and not acknowledged.
       This is passed to SQS when the message (or messages) are read.
       This value must be between 0 and 43200 (12 hours).
+    * `:attribute_names` - A list containing the names of attributes that should be
+      attached to the response and appended to the `metadata` field of the message.
+      Supported values are `:sender_id`, `:sent_timestamp`, `:approximate_receive_count`,
+      `:approximate_first_receive_timestamp`, `:wait_time_seconds` and
+      `:receive_message_wait_time_seconds`. You can also use `:all` instead of the list
+      if you want to retrieve all attributes.
+    * `:message_attribute_names` - A list containing the names of custom message attributes
+      that should be attached to the response and appended to the `metadata` field of the
+      message. You can also use `:all` instead of the list if you want to retrieve all
+      attributes.
     * `:config` - Optional. A set of options that overrides the default ExAws configuration
       options. The most commonly used options are: `:access_key_id`, `:secret_access_key`,
       `:scheme`, `:region` and `:port`. For a complete list of configuration options and
@@ -50,21 +60,9 @@ defmodule BroadwaySQS.Producer do
   The above configuration will set up a producer that continuously receives
   messages from `"my_queue"` and sends them downstream.
 
-  If you need to access the SQS message receipt while processing a
-  `Broadway.Message`, you can invoke `receipt/1`.
+  For a complete guide on using Broadway with Amazon SQS, please see the
+  [Amazon SQS Guide](https://hexdocs.pm/broadway/amazon-sqs.html).
   """
-
-  @doc """
-  Provide the message receipt (if possible) to allow the caller to use it
-  directly in their code.
-  """
-  @spec receipt(Broadway.Message.t()) ::
-          {:ok, receipt :: any()}
-          | {:error, :incompatible_producer}
-          | {:error, :receipt_not_found}
-  def receipt(%Broadway.Message{acknowledger: {client, _, _}} = message) do
-    client.receipt(message)
-  end
 
   use GenStage
 

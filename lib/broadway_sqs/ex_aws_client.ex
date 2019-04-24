@@ -14,6 +14,14 @@ defmodule BroadwaySQS.ExAwsClient do
   @default_max_number_of_messages 10
   @max_num_messages_allowed_by_aws 10
   @max_visibility_timeout_allowed_by_aws_in_seconds 12 * 60 * 60
+  @supported_attributes [
+    :sender_id,
+    :sent_timestamp,
+    :approximate_receive_count,
+    :approximate_first_receive_timestamp,
+    :wait_time_seconds,
+    :receive_message_wait_time_seconds
+  ]
 
   @impl true
   def init(opts) do
@@ -43,15 +51,6 @@ defmodule BroadwaySQS.ExAwsClient do
   end
 
   @impl true
-  def receipt(%Message{acknowledger: {_, _, %{receipt: receipt}}}) do
-    {:ok, receipt}
-  end
-
-  def receipt(_) do
-    {:error, :receipt_not_found}
-  end
-
-  @impl true
   def ack(ack_ref, successful, _failed) do
     successful
     |> Enum.chunk_every(@max_num_messages_allowed_by_aws)
@@ -70,17 +69,20 @@ defmodule BroadwaySQS.ExAwsClient do
 
   defp wrap_received_messages({:ok, %{body: body}}, ack_ref) do
     Enum.map(body.messages, fn message ->
-      ack_data = %{
-        receipt: %{id: message.message_id, receipt_handle: message.receipt_handle}
-      }
-
-      %Message{data: message.body, acknowledger: {__MODULE__, ack_ref, ack_data}}
+      metadata = Map.delete(message, :body)
+      acknowledger = build_acknowledger(message, ack_ref)
+      %Message{data: message.body, metadata: metadata, acknowledger: acknowledger}
     end)
   end
 
   defp wrap_received_messages({:error, reason}, _) do
     Logger.error("Unable to fetch events from AWS. Reason: #{inspect(reason)}")
     []
+  end
+
+  defp build_acknowledger(message, ack_ref) do
+    receipt = %{id: message.message_id, receipt_handle: message.receipt_handle}
+    {__MODULE__, ack_ref, %{receipt: receipt}}
   end
 
   defp put_max_number_of_messages(receive_messages_opts, demand) do
@@ -128,6 +130,30 @@ defmodule BroadwaySQS.ExAwsClient do
     )
   end
 
+  defp validate_option(:attribute_names, value) do
+    supported? = fn name -> name in @supported_attributes end
+
+    if value in [nil, :all] || (is_list(value) && Enum.all?(value, supported?)) do
+      {:ok, value}
+    else
+      validation_error(
+        :attribute_names,
+        ":all or a list containing any of #{inspect(@supported_attributes)}",
+        value
+      )
+    end
+  end
+
+  defp validate_option(:message_attribute_names, value) do
+    non_empty_string? = fn name -> is_binary(name) && name != "" end
+
+    if value in [nil, :all] || (is_list(value) && Enum.all?(value, non_empty_string?)) do
+      {:ok, value}
+    else
+      validation_error(:message_attribute_names, ":all or a list of non empty strings", value)
+    end
+  end
+
   defp validate_option(_, value), do: {:ok, value}
 
   defp validation_error(option, expected, value) do
@@ -136,18 +162,20 @@ defmodule BroadwaySQS.ExAwsClient do
 
   defp validate_receive_messages_opts(opts) do
     with {:ok, wait_time_seconds} <- validate(opts, :wait_time_seconds),
+         {:ok, attribute_names} <- validate(opts, :attribute_names),
+         {:ok, message_attribute_names} <- validate(opts, :message_attribute_names),
          {:ok, max_number_of_messages} <-
            validate(opts, :max_number_of_messages, @default_max_number_of_messages),
          {:ok, visibility_timeout} <- validate(opts, :visibility_timeout) do
-      wait_time_seconds_opt =
-        if wait_time_seconds, do: [wait_time_seconds: wait_time_seconds], else: []
+      validated_opts = [
+        max_number_of_messages: max_number_of_messages,
+        wait_time_seconds: wait_time_seconds,
+        visibility_timeout: visibility_timeout,
+        attribute_names: attribute_names,
+        message_attribute_names: message_attribute_names
+      ]
 
-      visibility_timeout_opt =
-        if visibility_timeout, do: [visibility_timeout: visibility_timeout], else: []
-
-      {:ok,
-       [max_number_of_messages: max_number_of_messages] ++
-         wait_time_seconds_opt ++ visibility_timeout_opt}
+      {:ok, Enum.filter(validated_opts, fn {_, value} -> value end)}
     end
   end
 end
