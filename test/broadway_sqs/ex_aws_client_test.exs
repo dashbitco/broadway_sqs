@@ -17,7 +17,23 @@ defmodule BroadwaySQS.ExAwsClientTest do
           <Message>
             <MessageId>Id_1</MessageId>
             <ReceiptHandle>ReceiptHandle_1</ReceiptHandle>
+            <MD5OfBody>fake_md5</MD5OfBody>
             <Body>Message 1</Body>
+            <Attribute>
+              <Name>SenderId</Name>
+              <Value>13</Value>
+            </Attribute>
+            <Attribute>
+              <Name>ApproximateReceiveCount</Name>
+              <Value>5</Value>
+            </Attribute>
+            <MessageAttribute>
+              <Name>TestStringAttribute</Name>
+              <Value>
+                <StringValue>Test</StringValue>
+                <DataType>String</DataType>
+              </Value>
+            </MessageAttribute>
           </Message>
           <Message>
             <MessageId>Id_2</MessageId>
@@ -49,7 +65,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
   describe "validate init options" do
     test ":queue_name is required" do
       assert ExAwsClient.init([]) ==
-               {:error, "expected :queue_name to be a non empty string, got: nil"}
+               {:error, ":queue_name is required"}
 
       assert ExAwsClient.init(queue_name: nil) ==
                {:error, "expected :queue_name to be a non empty string, got: nil"}
@@ -64,6 +80,61 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
       {:ok, %{queue_name: queue_name}} = ExAwsClient.init(queue_name: "my_queue")
       assert queue_name == "my_queue"
+    end
+
+    test ":attribute_names is optional without default value" do
+      {:ok, result} = ExAwsClient.init(queue_name: "my_queue")
+
+      refute Keyword.has_key?(result.receive_messages_opts, :attribute_names)
+    end
+
+    test ":attribute_names should be a list containing any of the supported attributes" do
+      all_attribute_names = [
+        :sender_id,
+        :sent_timestamp,
+        :approximate_receive_count,
+        :approximate_first_receive_timestamp,
+        :wait_time_seconds,
+        :receive_message_wait_time_seconds
+      ]
+
+      {:ok, result} =
+        ExAwsClient.init(queue_name: "my_queue", attribute_names: all_attribute_names)
+
+      assert result.receive_messages_opts[:attribute_names] == all_attribute_names
+
+      attribute_names = [:approximate_receive_count, :unsupported]
+
+      {:error, message} =
+        ExAwsClient.init(queue_name: "my_queue", attribute_names: attribute_names)
+
+      assert message ==
+               "expected :attribute_names to be :all or a list containing any of " <>
+                 inspect(all_attribute_names) <>
+                 ", got: [:approximate_receive_count, :unsupported]"
+    end
+
+    test ":message_attribute_names is optional without default value" do
+      {:ok, result} = ExAwsClient.init(queue_name: "my_queue")
+
+      refute Keyword.has_key?(result.receive_messages_opts, :message_attribute_names)
+    end
+
+    test ":message_attribute_names should be a list of non empty strings" do
+      {:ok, result} =
+        ExAwsClient.init(queue_name: "my_queue", message_attribute_names: ["attr_1", "attr_2"])
+
+      assert result.receive_messages_opts[:message_attribute_names] == ["attr_1", "attr_2"]
+
+      {:error, message} =
+        ExAwsClient.init(
+          queue_name: "my_queue",
+          message_attribute_names: ["attr_1", :not_a_string]
+        )
+
+      assert message ==
+               "expected :message_attribute_names to be :all or a list of non empty strings" <>
+                 ", got: [\"attr_1\", :not_a_string]"
     end
 
     test ":wait_time_seconds is optional without default value" do
@@ -215,15 +286,50 @@ defmodule BroadwaySQS.ExAwsClientTest do
       {:ok, opts} = ExAwsClient.init(base_opts)
       [message1, message2] = ExAwsClient.receive_messages(10, opts)
 
-      assert message1 == %Message{
-               acknowledger:
-                 {ExAwsClient, opts.ack_ref,
-                  %{receipt: %{id: "Id_1", receipt_handle: "ReceiptHandle_1"}}},
-               data: "Message 1",
-               batcher: :default
+      assert message1.data == "Message 1"
+      assert message2.data == "Message 2"
+
+      assert message1.acknowledger ==
+               {ExAwsClient, opts.ack_ref,
+                %{receipt: %{id: "Id_1", receipt_handle: "ReceiptHandle_1"}}}
+    end
+
+    test "add message_id, receipt_handle and md5_of_body to metadata", %{opts: base_opts} do
+      {:ok, opts} = ExAwsClient.init(base_opts)
+      [%{metadata: metadata} | _] = ExAwsClient.receive_messages(10, opts)
+
+      assert metadata.message_id == "Id_1"
+      assert metadata.receipt_handle == "ReceiptHandle_1"
+      assert metadata.md5_of_body == "fake_md5"
+    end
+
+    test "add attributes to metadata", %{opts: base_opts} do
+      {:ok, opts} = Keyword.put(base_opts, :attribute_names, :all) |> ExAwsClient.init()
+
+      [%{metadata: metadata_1}, %{metadata: metadata_2} | _] =
+        ExAwsClient.receive_messages(10, opts)
+
+      assert metadata_1.attributes == %{"sender_id" => 13, "approximate_receive_count" => 5}
+      assert metadata_2.attributes == []
+    end
+
+    test "add message_attributes to metadata", %{opts: base_opts} do
+      {:ok, opts} = Keyword.put(base_opts, :message_attribute_names, :all) |> ExAwsClient.init()
+
+      [%{metadata: metadata_1}, %{metadata: metadata_2} | _] =
+        ExAwsClient.receive_messages(10, opts)
+
+      assert metadata_1.message_attributes == %{
+               "TestStringAttribute" => %{
+                 name: "TestStringAttribute",
+                 data_type: "String",
+                 string_value: "Test",
+                 binary_value: "",
+                 value: "Test"
+               }
              }
 
-      assert message2.data == "Message 2"
+      assert metadata_2.message_attributes == []
     end
 
     test "if the request fails, returns an empty list and log the error", %{opts: base_opts} do
@@ -334,40 +440,6 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
       assert_received {:http_request_called, %{url: url}}
       assert url == "http://localhost:9324/my_queue"
-    end
-  end
-
-  describe "message receipt provision" do
-    setup do
-      %{
-        opts: [
-          queue_name: "my_queue",
-          config: [
-            http_client: FakeHttpClient,
-            access_key_id: "FAKE_ID",
-            secret_access_key: "FAKE_KEY"
-          ]
-        ]
-      }
-    end
-
-    test "obtain the correct message receipts", %{opts: base_opts} do
-      {:ok, opts} = ExAwsClient.init(base_opts)
-      [msg | _] = ExAwsClient.receive_messages(10, opts)
-
-      {:ok, %{id: id, receipt_handle: handle}} = ExAwsClient.receipt(msg)
-
-      assert id == "Id_1"
-      assert handle == "ReceiptHandle_1"
-    end
-
-    test "deal with error case", %{opts: base_opts} do
-      {:ok, opts} = ExAwsClient.init(base_opts)
-      message = %Message{acknowledger: {ExAwsClient, opts.ack_ref, nil}, data: nil}
-
-      {:error, e} = ExAwsClient.receipt(message)
-
-      assert e == :receipt_not_found
     end
   end
 end
