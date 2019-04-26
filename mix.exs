@@ -1,7 +1,7 @@
 defmodule BroadwaySqs.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @description "A SQS connector for Broadway"
 
   def project do
@@ -26,7 +26,7 @@ defmodule BroadwaySqs.MixProject do
 
   defp deps do
     [
-      {:broadway, git: "https://github.com/plataformatec/broadway.git"},
+      {:broadway, "~> 0.3.0"},
       {:ex_aws_sqs, "~> 2.0"},
       {:hackney, "~> 1.9", only: [:dev]},
       {:sweet_xml, "~> 0.6"},
