@@ -3,6 +3,12 @@ defmodule BroadwaySQSExample.String do
 
   alias Broadway.Message
 
+  @broadway_sqs_implementation Application.get_env(
+                                 :broadway_sqs_example,
+                                 :broadway_sqs_implementation,
+                                 BroadwaySQS.ExAwsClient
+                               )
+
   def start_link(_opts) do
     Broadway.start_link(__MODULE__,
       name: __MODULE__,
@@ -10,6 +16,7 @@ defmodule BroadwaySQSExample.String do
         default: [
           module:
             {BroadwaySQS.Producer,
+             sqs_client: @broadway_sqs_implementation,
              queue_name: Application.get_env(:broadway_sqs_example, :string_queue),
              config: [
                # access_key_id: "YOUR_AWS_ACCESS_KEY_ID",
