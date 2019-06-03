@@ -50,7 +50,8 @@ defmodule BroadwaySQS.Producer do
               queue_name: "my_queue",
               config: [
                 access_key_id: "YOUR_AWS_ACCESS_KEY_ID",
-                secret_access_key: "YOUR_AWS_SECRET_ACCESS_KEY"
+                secret_access_key: "YOUR_AWS_SECRET_ACCESS_KEY",
+                region: "us-east-2"
               ]
             }
           ]
