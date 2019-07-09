@@ -3,28 +3,34 @@ defmodule BroadwaySQS.Producer do
   A GenStage producer that continuously polls messages from a SQS queue and
   acknowledge them after being successfully processed.
 
-  ## Options using ExAwsClient (Default)
+  ## Options for `BroadwaySQS.ExAwsClient` (Default client)
 
     * `:queue_name` - Required. The name of the queue.
+
     * `:max_number_of_messages` - Optional. The maximum number of messages to be fetched
       per request. This value must be between `1` and `10`, which is the maximun number
       allowed by AWS. Default is `10`.
+
     * `:wait_time_seconds` - Optional. The duration (in seconds) for which the call waits
       for a message to arrive in the queue before returning.
+
     * `:visibility_timeout` - Optional. The time period (in seconds) that a message will
       remain _invisible_ to other consumers whilst still on the queue and not acknowledged.
       This is passed to SQS when the message (or messages) are read.
       This value must be between 0 and 43200 (12 hours).
+
     * `:attribute_names` - A list containing the names of attributes that should be
       attached to the response and appended to the `metadata` field of the message.
       Supported values are `:sender_id`, `:sent_timestamp`, `:approximate_receive_count`,
       `:approximate_first_receive_timestamp`, `:wait_time_seconds` and
       `:receive_message_wait_time_seconds`. You can also use `:all` instead of the list
       if you want to retrieve all attributes.
+
     * `:message_attribute_names` - A list containing the names of custom message attributes
       that should be attached to the response and appended to the `metadata` field of the
       message. You can also use `:all` instead of the list if you want to retrieve all
       attributes.
+
     * `:config` - Optional. A set of options that overrides the default ExAws configuration
       options. The most commonly used options are: `:access_key_id`, `:secret_access_key`,
       `:scheme`, `:region` and `:port`. For a complete list of configuration options and
@@ -36,7 +42,8 @@ defmodule BroadwaySQS.Producer do
       behaviour. This module is responsible for fetching and acknowledging the
       messages. Pay attention that all options passed to the producer will be forwarded
       to the client. It's up to the client to normalize the options it needs. Default
-      is `ExAwsClient`.
+      is `BroadwaySQS.ExAwsClient`.
+
     * `:receive_interval` - Optional. The duration (in milliseconds) for which the producer
       waits before making a request for more messages. Default is 5000.
 
