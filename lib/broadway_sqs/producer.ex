@@ -6,7 +6,7 @@ defmodule BroadwaySQS.Producer do
   By default this producer uses `BroadwaySQS.ExAwsClient` to talk to S3 but
   you can provide your client by implemneting the `BroadwaySQS.SQSClient`
   behaviour.
-  
+
   For a quick getting started on using Broadway with Amazon SQS, please see
   the [Amazon SQS Guide](https://hexdocs.pm/broadway/amazon-sqs.html).
 
@@ -44,7 +44,7 @@ defmodule BroadwaySQS.Producer do
       their default values, please see the `ExAws` documentation.
 
   ## Producer Options
-  
+
   These options applies to all producers, regardless of client implementation:
 
     * `:receive_interval` - Optional. The duration (in milliseconds) for which the producer
@@ -62,12 +62,12 @@ defmodule BroadwaySQS.Producer do
   In case of failures, no message is acknowledged, which means Amazon SQS will
   eventually redeliver the message on remove it based on the "Visibility Timeout"
   and "Max Receive Count" configurations. For more information, see:
-  
+
     * ["Visibility Timeout" page on Amazon SQS](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html)
     * ["Dead Letter Queue" page on Amazon SQS](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html)
 
   ### Batching
-  
+
   Even if you are not interested in working with Broadway batches via the
   `handle_batch/3` callback, we recommend all Broadway pipelines with SQS
   producers to define a default batcher with `batch_size` set to 10, so
