@@ -3,8 +3,8 @@ defmodule BroadwaySQS.Producer do
   A GenStage producer that continuously polls messages from a SQS queue and
   acknowledge them after being successfully processed.
 
-  By default this producer uses `BroadwaySQS.ExAwsClient` to talk to S3 but
-  you can provide your client by implemneting the `BroadwaySQS.SQSClient`
+  By default this producer uses `BroadwaySQS.ExAwsClient` to talk to SQS but
+  you can provide your client by implementing the `BroadwaySQS.SQSClient`
   behaviour.
 
   For a quick getting started on using Broadway with Amazon SQS, please see
