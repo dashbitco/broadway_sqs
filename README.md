@@ -6,14 +6,6 @@ Documentation can be found at [https://hexdocs.pm/broadway_sqs](https://hexdocs.
 For more details on using Broadway with Amazon SQS, please see the
 [Amazon SQS Guide](https://hexdocs.pm/broadway/amazon-sqs.html).
 
-This project provides:
-
-  * `BroadwaySQS.Producer` - A GenStage producer that continuously receives messages from
-    a SQS queue and acknowledge them after being successfully processed.
-  * `BroadwaySQS.SQSClient` - A generic behaviour to implement SQS clients.
-  * `BroadwaySQS.ExAwsClient` - Default SQS client used by `BroadwaySQS.Producer`.
-
-
 ## Installation
 
 Add `:broadway_sqs` to the list of dependencies in `mix.exs` along with the HTTP
