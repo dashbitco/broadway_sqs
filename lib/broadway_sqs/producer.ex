@@ -3,7 +3,11 @@ defmodule BroadwaySQS.Producer do
   A GenStage producer that continuously polls messages from a SQS queue and
   acknowledge them after being successfully processed.
 
-  ## Options for `BroadwaySQS.ExAwsClient` (Default client)
+  By default this producer uses `BroadwaySQS.ExAwsClient` to talk to S3 but
+  you can provide your client by implemneting the `BroadwaySQS.SQSClient`
+  behaviour.
+
+  ## Options for `BroadwaySQS.ExAwsClient`
 
     * `:queue_name` - Required. The name of the queue.
 
@@ -36,7 +40,12 @@ defmodule BroadwaySQS.Producer do
       `:scheme`, `:region` and `:port`. For a complete list of configuration options and
       their default values, please see the `ExAws` documentation.
 
-  ## Additional options
+  ## Producer Options
+  
+  These options applies to all producers, regardless of client implementation:
+
+    * `:receive_interval` - Optional. The duration (in milliseconds) for which the producer
+      waits before making a request for more messages. Default is 5000.
 
     * `:sqs_client` - Optional. A module that implements the `BroadwaySQS.SQSClient`
       behaviour. This module is responsible for fetching and acknowledging the
@@ -44,10 +53,17 @@ defmodule BroadwaySQS.Producer do
       to the client. It's up to the client to normalize the options it needs. Default
       is `BroadwaySQS.ExAwsClient`.
 
-    * `:receive_interval` - Optional. The duration (in milliseconds) for which the producer
-      waits before making a request for more messages. Default is 5000.
+  ## Acknowledgments
 
-  ### Example
+  In case of successful processing, the message is properly acknowledge to SQS.
+  In case of failures, no message is acknowledged, which means Amazon SQS will
+  eventually redeliver the message on remove it based on the "Visibility Timeout"
+  and "Max Receive Count" configurations. For more information, see:
+  
+    * ["Visibility Timeout" page on Amazon SQS](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html)
+    * ["Dead Letter Queue" page on Amazon SQS](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html)
+
+  ## Example
 
       Broadway.start_link(MyBroadway,
         name: MyBroadway,
