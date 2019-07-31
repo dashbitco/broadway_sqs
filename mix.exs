@@ -44,7 +44,7 @@ defmodule BroadwaySqs.MixProject do
 
   defp package do
     %{
-      licenses: ["Apache 2.0"],
+      licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/plataformatec/broadway_sqs"}
     }
   end
