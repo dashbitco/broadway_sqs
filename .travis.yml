@@ -1,5 +1,5 @@
 language: elixir
-sudo: false
+dist: trusty
 script:
   - if [ "$CHECK_FORMATTED" = true ]; then mix format --check-formatted; fi
   - mix test
