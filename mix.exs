@@ -27,7 +27,7 @@ defmodule BroadwaySqs.MixProject do
   defp deps do
     [
       {:broadway, "~> 0.3.0"},
-      {:ex_aws_sqs, "~> 2.0"},
+      {:ex_aws_sqs, "~> 3.0"},
       {:hackney, "~> 1.9", only: [:dev]},
       {:sweet_xml, "~> 0.6"},
       {:ex_doc, ">= 0.19.0", only: :docs}

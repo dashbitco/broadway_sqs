@@ -348,8 +348,8 @@ defmodule BroadwaySQS.ExAwsClientTest do
       ExAwsClient.receive_messages(10, opts)
 
       assert_received {:http_request_called, %{body: body, url: url}}
-      assert body == "Action=ReceiveMessage&MaxNumberOfMessages=10"
-      assert url == "https://sqs.us-east-1.amazonaws.com/my_queue"
+      assert body == "Action=ReceiveMessage&MaxNumberOfMessages=10&QueueUrl=my_queue"
+      assert url == "https://sqs.us-east-1.amazonaws.com/"
     end
 
     test "request with custom :wait_time_seconds", %{opts: base_opts} do
@@ -381,7 +381,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
       ExAwsClient.receive_messages(10, opts)
 
       assert_received {:http_request_called, %{url: url}}
-      assert url == "http://localhost:9324/my_queue"
+      assert url == "http://localhost:9324/"
     end
   end
 
@@ -418,9 +418,9 @@ defmodule BroadwaySQS.ExAwsClientTest do
       assert body ==
                "Action=DeleteMessageBatch" <>
                  "&DeleteMessageBatchRequestEntry.1.Id=1&DeleteMessageBatchRequestEntry.1.ReceiptHandle=abc" <>
-                 "&DeleteMessageBatchRequestEntry.2.Id=2&DeleteMessageBatchRequestEntry.2.ReceiptHandle=def"
+                 "&DeleteMessageBatchRequestEntry.2.Id=2&DeleteMessageBatchRequestEntry.2.ReceiptHandle=def&QueueUrl=my_queue"
 
-      assert url == "https://sqs.us-east-1.amazonaws.com/my_queue"
+      assert url == "https://sqs.us-east-1.amazonaws.com/"
     end
 
     test "request with custom :config options", %{opts: base_opts} do
@@ -439,7 +439,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
       ExAwsClient.ack(opts.ack_ref, [message], [])
 
       assert_received {:http_request_called, %{url: url}}
-      assert url == "http://localhost:9324/my_queue"
+      assert url == "http://localhost:9324/"
     end
   end
 end
