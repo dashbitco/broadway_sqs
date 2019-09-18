@@ -14,7 +14,7 @@ client of your choice (defaults to `:hackney`):
 ```elixir
 def deps do
   [
-    {:broadway_sqs, "~> 0.2.0"},
+    {:broadway_sqs, "~> 0.3.0"},
     {:hackney, "~> 1.9"}
   ]
 end

@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3.0 (2019-09-18)
+
+  * Update `ex_aws` dependency to `~> 3.0`
+  * Update `broadway` dependency to `~> 0.4.0`
+
 ## v0.2.0 (2019-04-26)
 
   * Automatically add `message_id`, `receipt_handle` and `md5_of_body` to the message's metadata
