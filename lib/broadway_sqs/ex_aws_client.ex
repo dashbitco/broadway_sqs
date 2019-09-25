@@ -26,14 +26,14 @@ defmodule BroadwaySQS.ExAwsClient do
 
   @impl true
   def init(opts) do
-    with {:ok, queue_name} <- validate(opts, :queue_name, required: true),
+    with {:ok, queue_url} <- validate(opts, :queue_url, required: true),
          {:ok, receive_messages_opts} <- validate_receive_messages_opts(opts),
          {:ok, config} <- validate(opts, :config, default: []) do
-      ack_ref = Broadway.TermStorage.put(%{queue_name: queue_name, config: config})
+      ack_ref = Broadway.TermStorage.put(%{queue_url: queue_url, config: config})
 
       {:ok,
        %{
-         queue_name: queue_name,
+         queue_url: queue_url,
          receive_messages_opts: receive_messages_opts,
          config: config,
          ack_ref: ack_ref
@@ -45,7 +45,7 @@ defmodule BroadwaySQS.ExAwsClient do
   def receive_messages(demand, opts) do
     receive_messages_opts = put_max_number_of_messages(opts.receive_messages_opts, demand)
 
-    opts.queue_name
+    opts.queue_url
     |> ExAws.SQS.receive_message(receive_messages_opts)
     |> ExAws.request(opts.config)
     |> wrap_received_messages(opts.ack_ref)
@@ -63,7 +63,7 @@ defmodule BroadwaySQS.ExAwsClient do
 
     opts = Broadway.TermStorage.get!(ack_ref)
 
-    opts.queue_name
+    opts.queue_url
     |> ExAws.SQS.delete_message_batch(receipts)
     |> ExAws.request(opts.config)
   end
@@ -119,8 +119,8 @@ defmodule BroadwaySQS.ExAwsClient do
   defp validate_option(:config, value) when not is_list(value),
     do: validation_error(:config, "a keyword list", value)
 
-  defp validate_option(:queue_name, value) when not is_binary(value) or value == "",
-    do: validation_error(:queue_name, "a non empty string", value)
+  defp validate_option(:queue_url, value) when not is_binary(value) or value == "",
+    do: validation_error(:queue_url, "a non empty string", value)
 
   defp validate_option(:wait_time_seconds, value) when not is_integer(value) or value < 0,
     do: validation_error(:wait_time_seconds, "a non negative integer", value)
