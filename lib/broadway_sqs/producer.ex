@@ -12,7 +12,7 @@ defmodule BroadwaySQS.Producer do
 
   ## Options for `BroadwaySQS.ExAwsClient`
 
-    * `:queue_name` - Required. The name of the queue.
+    * `:queue_url` - Required. The full URL of the queue.
 
     * `:max_number_of_messages` - Optional. The maximum number of messages to be fetched
       per request. This value must be between `1` and `10`, which is the maximun number
@@ -81,7 +81,7 @@ defmodule BroadwaySQS.Producer do
         producers: [
           default: [
             module: {BroadwaySQS.Producer,
-              queue_name: "my_queue",
+              queue_url: "https://us-east-2.queue.amazonaws.com/100000000001/my_queue",
               config: [
                 access_key_id: "YOUR_AWS_ACCESS_KEY_ID",
                 secret_access_key: "YOUR_AWS_SECRET_ACCESS_KEY",
@@ -132,7 +132,7 @@ defmodule BroadwaySQS.Producer do
       producers: [
         default: [
           module: {BroadwaySQS.Producer,
-            queue_name: "my_queue",
+            queue_url: "https://us-east-2.queue.amazonaws.com/100000000001/my_queue",
             # Define which attributes/message_attributes you want to be attached
             attribute_names: [:approximate_receive_count],
             message_attribute_names: ["SomeAttribute"],

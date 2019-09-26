@@ -63,27 +63,27 @@ defmodule BroadwaySQS.ExAwsClientTest do
   end
 
   describe "validate init options" do
-    test ":queue_name is required" do
+    test ":queue_url is required" do
       assert ExAwsClient.init([]) ==
-               {:error, ":queue_name is required"}
+               {:error, ":queue_url is required"}
 
-      assert ExAwsClient.init(queue_name: nil) ==
-               {:error, "expected :queue_name to be a non empty string, got: nil"}
+      assert ExAwsClient.init(queue_url: nil) ==
+               {:error, "expected :queue_url to be a non empty string, got: nil"}
     end
 
-    test ":queue_name should be a non empty string" do
-      assert ExAwsClient.init(queue_name: "") ==
-               {:error, "expected :queue_name to be a non empty string, got: \"\""}
+    test ":queue_url should be a non empty string" do
+      assert ExAwsClient.init(queue_url: "") ==
+               {:error, "expected :queue_url to be a non empty string, got: \"\""}
 
-      assert ExAwsClient.init(queue_name: :an_atom) ==
-               {:error, "expected :queue_name to be a non empty string, got: :an_atom"}
+      assert ExAwsClient.init(queue_url: :an_atom) ==
+               {:error, "expected :queue_url to be a non empty string, got: :an_atom"}
 
-      {:ok, %{queue_name: queue_name}} = ExAwsClient.init(queue_name: "my_queue")
-      assert queue_name == "my_queue"
+      {:ok, %{queue_url: queue_url}} = ExAwsClient.init(queue_url: "my_queue")
+      assert queue_url == "my_queue"
     end
 
     test ":attribute_names is optional without default value" do
-      {:ok, result} = ExAwsClient.init(queue_name: "my_queue")
+      {:ok, result} = ExAwsClient.init(queue_url: "my_queue")
 
       refute Keyword.has_key?(result.receive_messages_opts, :attribute_names)
     end
@@ -99,14 +99,14 @@ defmodule BroadwaySQS.ExAwsClientTest do
       ]
 
       {:ok, result} =
-        ExAwsClient.init(queue_name: "my_queue", attribute_names: all_attribute_names)
+        ExAwsClient.init(queue_url: "my_queue", attribute_names: all_attribute_names)
 
       assert result.receive_messages_opts[:attribute_names] == all_attribute_names
 
       attribute_names = [:approximate_receive_count, :unsupported]
 
       {:error, message} =
-        ExAwsClient.init(queue_name: "my_queue", attribute_names: attribute_names)
+        ExAwsClient.init(queue_url: "my_queue", attribute_names: attribute_names)
 
       assert message ==
                "expected :attribute_names to be :all or a list containing any of " <>
@@ -115,20 +115,20 @@ defmodule BroadwaySQS.ExAwsClientTest do
     end
 
     test ":message_attribute_names is optional without default value" do
-      {:ok, result} = ExAwsClient.init(queue_name: "my_queue")
+      {:ok, result} = ExAwsClient.init(queue_url: "my_queue")
 
       refute Keyword.has_key?(result.receive_messages_opts, :message_attribute_names)
     end
 
     test ":message_attribute_names should be a list of non empty strings" do
       {:ok, result} =
-        ExAwsClient.init(queue_name: "my_queue", message_attribute_names: ["attr_1", "attr_2"])
+        ExAwsClient.init(queue_url: "my_queue", message_attribute_names: ["attr_1", "attr_2"])
 
       assert result.receive_messages_opts[:message_attribute_names] == ["attr_1", "attr_2"]
 
       {:error, message} =
         ExAwsClient.init(
-          queue_name: "my_queue",
+          queue_url: "my_queue",
           message_attribute_names: ["attr_1", :not_a_string]
         )
 
@@ -138,13 +138,13 @@ defmodule BroadwaySQS.ExAwsClientTest do
     end
 
     test ":wait_time_seconds is optional without default value" do
-      {:ok, result} = ExAwsClient.init(queue_name: "my_queue")
+      {:ok, result} = ExAwsClient.init(queue_url: "my_queue")
 
       refute Keyword.has_key?(result.receive_messages_opts, :wait_time_seconds)
     end
 
     test ":wait_time_seconds should be a non negative integer" do
-      opts = [queue_name: "my_queue"]
+      opts = [queue_url: "my_queue"]
 
       {:ok, result} = opts |> Keyword.put(:wait_time_seconds, 0) |> ExAwsClient.init()
       assert result.receive_messages_opts[:wait_time_seconds] == 0
@@ -160,13 +160,13 @@ defmodule BroadwaySQS.ExAwsClientTest do
     end
 
     test ":max_number_of_messages is optional with default value 10" do
-      {:ok, result} = ExAwsClient.init(queue_name: "my_queue")
+      {:ok, result} = ExAwsClient.init(queue_url: "my_queue")
 
       assert result.receive_messages_opts[:max_number_of_messages] == 10
     end
 
     test ":max_number_of_messages should be an integer between 1 and 10" do
-      opts = [queue_name: "my_queue"]
+      opts = [queue_url: "my_queue"]
 
       {:ok, result} = opts |> Keyword.put(:max_number_of_messages, 1) |> ExAwsClient.init()
       assert result.receive_messages_opts[:max_number_of_messages] == 1
@@ -192,12 +192,12 @@ defmodule BroadwaySQS.ExAwsClientTest do
     end
 
     test ":config is optional with default value []" do
-      {:ok, result} = ExAwsClient.init(queue_name: "my_queue")
+      {:ok, result} = ExAwsClient.init(queue_url: "my_queue")
       assert result.config == []
     end
 
     test ":config should be a keyword list" do
-      opts = [queue_name: "my_queue"]
+      opts = [queue_url: "my_queue"]
 
       config = [scheme: "https://", region: "us-east-1"]
       {:ok, result} = opts |> Keyword.put(:config, config) |> ExAwsClient.init()
@@ -209,7 +209,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
     end
 
     test ":visibility_timeout should be a non negative integer" do
-      opts = [queue_name: "my_queue"]
+      opts = [queue_url: "my_queue"]
 
       {:ok, result} = opts |> Keyword.put(:visibility_timeout, 0) |> ExAwsClient.init()
       assert result.receive_messages_opts[:visibility_timeout] == 0
@@ -229,13 +229,13 @@ defmodule BroadwaySQS.ExAwsClientTest do
     end
 
     test ":visibility_timeout is optional without default value" do
-      {:ok, result} = ExAwsClient.init(queue_name: "my_queue")
+      {:ok, result} = ExAwsClient.init(queue_url: "my_queue")
 
       refute Keyword.has_key?(result.receive_messages_opts, :visibility_timeout)
     end
 
     test ":visibility_timeout should be an integer between 0 seconds and 12 hours" do
-      opts = [queue_name: "my_queue"]
+      opts = [queue_url: "my_queue"]
 
       {:ok, result} = opts |> Keyword.put(:visibility_timeout, 0) |> ExAwsClient.init()
       assert result.receive_messages_opts[:visibility_timeout] == 0
@@ -271,7 +271,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
     setup do
       %{
         opts: [
-          queue_name: "my_queue",
+          queue_url: "my_queue",
           config: [
             http_client: FakeHttpClient,
             access_key_id: "FAKE_ID",
@@ -389,7 +389,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
     setup do
       %{
         opts: [
-          queue_name: "my_queue",
+          queue_url: "my_queue",
           config: [
             http_client: FakeHttpClient,
             access_key_id: "FAKE_ID",

@@ -63,9 +63,9 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
   test "raise an ArgumentError with proper message when client options are invalid" do
     assert_raise(
       ArgumentError,
-      "invalid options given to BroadwaySQS.ExAwsClient.init/1, expected :queue_name to be a non empty string, got: nil",
+      "invalid options given to BroadwaySQS.ExAwsClient.init/1, expected :queue_url to be a non empty string, got: nil",
       fn ->
-        BroadwaySQS.Producer.init(queue_name: nil)
+        BroadwaySQS.Producer.init(queue_url: nil)
       end
     )
   end
