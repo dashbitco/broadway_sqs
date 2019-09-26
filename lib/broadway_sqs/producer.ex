@@ -155,12 +155,23 @@ defmodule BroadwaySQS.Producer do
 
   use GenStage
 
+  require Logger
+
   @default_receive_interval 5000
 
   @impl true
   def init(opts) do
     client = opts[:sqs_client] || BroadwaySQS.ExAwsClient
     receive_interval = opts[:receive_interval] || @default_receive_interval
+
+    if Keyword.has_key?(opts, :queue_name) do
+      Logger.error(
+        "The option :queue_name has been removed in order to keep compatibility with " <>
+          "ex_aws_sqs >= v3.0.0. Please set the full queue URL using the new :queue_url option."
+      )
+
+      exit(:invalid_config)
+    end
 
     case client.init(opts) do
       {:error, message} ->
