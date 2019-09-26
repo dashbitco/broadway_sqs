@@ -169,6 +169,8 @@ defmodule BroadwaySQS.Producer do
         "The option :queue_name has been removed in order to keep compatibility with " <>
           "ex_aws_sqs >= v3.0.0. Please set the full queue URL using the new :queue_url option."
       )
+
+      exit(:invalid_config)
     end
 
     case client.init(opts) do
