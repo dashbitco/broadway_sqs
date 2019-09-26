@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3.0 (2019-09-26)
+
+  * Upgrade to Broadway v0.4.0 and ex_aws_sqs v3.0
+  * Replace option `:queue_name` with `:queue_url` to keep compatibility with ex_aws_sqs >= v3.0.0
+
 ## v0.2.0 (2019-04-26)
 
   * Automatically add `message_id`, `receipt_handle` and `md5_of_body` to the message's metadata
