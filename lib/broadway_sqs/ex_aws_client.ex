@@ -28,8 +28,14 @@ defmodule BroadwaySQS.ExAwsClient do
   def init(opts) do
     with {:ok, queue_url} <- validate(opts, :queue_url, required: true),
          {:ok, receive_messages_opts} <- validate_receive_messages_opts(opts),
+         {:ok, dead_letter_queue_url} <- validate(opts, :dead_letter_queue_url, default: ""),
          {:ok, config} <- validate(opts, :config, default: []) do
-      ack_ref = Broadway.TermStorage.put(%{queue_url: queue_url, config: config})
+      ack_ref =
+        Broadway.TermStorage.put(%{
+          queue_url: queue_url,
+          config: config,
+          dead_letter_queue_url: dead_letter_queue_url
+        })
 
       {:ok,
        %{
@@ -52,8 +58,23 @@ defmodule BroadwaySQS.ExAwsClient do
   end
 
   @impl true
-  def ack(ack_ref, successful, _failed) do
-    successful
+  def ack(ack_ref, successful, failed) do
+    opts = Broadway.TermStorage.get!(ack_ref)
+
+    to_remove =
+      case opts.dead_letter_queue_url do
+        "" ->
+          successful
+
+        _url ->
+          failed
+          |> Enum.chunk_every(@max_num_messages_allowed_by_aws)
+          |> Enum.each(fn messages -> send_messages(messages, ack_ref) end)
+
+          successful ++ failed
+      end
+
+    to_remove
     |> Enum.chunk_every(@max_num_messages_allowed_by_aws)
     |> Enum.each(fn messages -> delete_messages(messages, ack_ref) end)
   end
@@ -65,6 +86,16 @@ defmodule BroadwaySQS.ExAwsClient do
 
     opts.queue_url
     |> ExAws.SQS.delete_message_batch(receipts)
+    |> ExAws.request(opts.config)
+  end
+
+  defp send_messages(messages, ack_ref) do
+    new_messages = Enum.map(messages, &extract_failed_message/1)
+
+    opts = Broadway.TermStorage.get!(ack_ref)
+
+    opts.dead_letter_queue_url
+    |> ExAws.SQS.send_message_batch(new_messages)
     |> ExAws.request(opts.config)
   end
 
@@ -89,6 +120,16 @@ defmodule BroadwaySQS.ExAwsClient do
   defp put_max_number_of_messages(receive_messages_opts, demand) do
     max_number_of_messages = min(demand, receive_messages_opts[:max_number_of_messages])
     Keyword.put(receive_messages_opts, :max_number_of_messages, max_number_of_messages)
+  end
+
+  defp extract_failed_message(message) do
+    {:failed, reason} = message.status
+
+    [
+      id: message.metadata.message_id,
+      message_body: message.data,
+      message_attributes: [%{name: "reason", data_type: :string, value: reason}]
+    ]
   end
 
   defp extract_message_receipt(message) do
@@ -121,6 +162,9 @@ defmodule BroadwaySQS.ExAwsClient do
 
   defp validate_option(:queue_url, value) when not is_binary(value) or value == "",
     do: validation_error(:queue_url, "a non empty string", value)
+
+  defp validate_option(:dead_letter_queue_url, value) when not is_binary(value),
+    do: validation_error(:dead_letter_queue_url, "a string", value)
 
   defp validate_option(:wait_time_seconds, value) when not is_integer(value) or value < 0,
     do: validation_error(:wait_time_seconds, "a non negative integer", value)
