@@ -20,7 +20,8 @@ defmodule BroadwaySQS.Producer do
       allowed by AWS. Default is `10`.
 
     * `:wait_time_seconds` - Optional. The duration (in seconds) for which the call waits
-      for a message to arrive in the queue before returning.
+      for a message to arrive in the queue before returning. For more information see
+      ["WaitTimeSeconds" on the Amazon SQS documentation](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html).
 
     * `:visibility_timeout` - Optional. The time period (in seconds) that a message will
       remain _invisible_ to other consumers whilst still on the queue and not acknowledged.
