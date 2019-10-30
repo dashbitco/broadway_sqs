@@ -16,7 +16,7 @@ defmodule BroadwaySQS.Producer do
       regional endpoint*. For example, `https://sqs.amazonaws.com/0000000000/my_queue`.
 
     * `:max_number_of_messages` - Optional. The maximum number of messages to be fetched
-      per request. This value must be between `1` and `10`, which is the maximun number
+      per request. This value must be between `1` and `10`, which is the maximum number
       allowed by AWS. Default is `10`.
 
     * `:wait_time_seconds` - Optional. The duration (in seconds) for which the call waits
