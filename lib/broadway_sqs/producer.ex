@@ -12,7 +12,8 @@ defmodule BroadwaySQS.Producer do
 
   ## Options for `BroadwaySQS.ExAwsClient`
 
-    * `:queue_url` - Required. The full URL of the queue.
+    * `:queue_url` - Required. The url for the SQS queue. *Note this does not have to be a
+      regional endpoint*. For example, `https://sqs.amazonaws.com/0000000000/my_queue`.
 
     * `:max_number_of_messages` - Optional. The maximum number of messages to be fetched
       per request. This value must be between `1` and `10`, which is the maximun number
@@ -60,7 +61,7 @@ defmodule BroadwaySQS.Producer do
 
   In case of successful processing, the message is properly acknowledge to SQS.
   In case of failures, no message is acknowledged, which means Amazon SQS will
-  eventually redeliver the message on remove it based on the "Visibility Timeout"
+  eventually redeliver the message or remove it based on the "Visibility Timeout"
   and "Max Receive Count" configurations. For more information, see:
 
     * ["Visibility Timeout" page on Amazon SQS](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html)
@@ -81,7 +82,7 @@ defmodule BroadwaySQS.Producer do
         producers: [
           default: [
             module: {BroadwaySQS.Producer,
-              queue_url: "https://us-east-2.queue.amazonaws.com/100000000001/my_queue",
+              queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
               config: [
                 access_key_id: "YOUR_AWS_ACCESS_KEY_ID",
                 secret_access_key: "YOUR_AWS_SECRET_ACCESS_KEY",
@@ -132,7 +133,7 @@ defmodule BroadwaySQS.Producer do
       producers: [
         default: [
           module: {BroadwaySQS.Producer,
-            queue_url: "https://us-east-2.queue.amazonaws.com/100000000001/my_queue",
+            queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
             # Define which attributes/message_attributes you want to be attached
             attribute_names: [:approximate_receive_count],
             message_attribute_names: ["SomeAttribute"],
@@ -167,7 +168,7 @@ defmodule BroadwaySQS.Producer do
     if Keyword.has_key?(opts, :queue_name) do
       Logger.error(
         "The option :queue_name has been removed in order to keep compatibility with " <>
-          "ex_aws_sqs >= v3.0.0. Please set the full queue URL using the new :queue_url option."
+          "ex_aws_sqs >= v3.0.0. Please set the queue URL using the new :queue_url option."
       )
 
       exit(:invalid_config)
