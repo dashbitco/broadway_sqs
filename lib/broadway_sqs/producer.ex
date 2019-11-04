@@ -80,17 +80,15 @@ defmodule BroadwaySQS.Producer do
 
       Broadway.start_link(MyBroadway,
         name: MyBroadway,
-        producers: [
-          default: [
-            module: {BroadwaySQS.Producer,
-              queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
-              config: [
-                access_key_id: "YOUR_AWS_ACCESS_KEY_ID",
-                secret_access_key: "YOUR_AWS_SECRET_ACCESS_KEY",
-                region: "us-east-2"
-              ]
-            }
-          ]
+        producer: [
+          module: {BroadwaySQS.Producer,
+            queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+            config: [
+              access_key_id: "YOUR_AWS_ACCESS_KEY_ID",
+              secret_access_key: "YOUR_AWS_SECRET_ACCESS_KEY",
+              region: "us-east-2"
+            ]
+          }
         ],
         processors: [
           default: []
@@ -131,15 +129,13 @@ defmodule BroadwaySQS.Producer do
   accordingly, otherwise, attributes will not be attached to the response and
   will not be available in the `metadata` field
 
-      producers: [
-        default: [
-          module: {BroadwaySQS.Producer,
-            queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
-            # Define which attributes/message_attributes you want to be attached
-            attribute_names: [:approximate_receive_count],
-            message_attribute_names: ["SomeAttribute"],
-          }
-        ]
+      producer: [
+        module: {BroadwaySQS.Producer,
+          queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+          # Define which attributes/message_attributes you want to be attached
+          attribute_names: [:approximate_receive_count],
+          message_attribute_names: ["SomeAttribute"]
+        }
       ]
 
   and then in `handle_message`:

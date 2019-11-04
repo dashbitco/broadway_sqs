@@ -27,12 +27,10 @@ Configure Broadway with one or more producers using `BroadwaySQS.Producer`:
 ```elixir
 Broadway.start_link(MyBroadway,
   name: MyBroadway,
-  producers: [
-    default: [
-      module: {BroadwaySQS.Producer,
-        queue_url: "https://sqs.amazonaws.com/1234567890/queue"
-      }
-    ]
+  producer: [
+    module: {BroadwaySQS.Producer,
+      queue_url: "https://sqs.amazonaws.com/1234567890/queue"
+    }
   ]
 )
 ```
