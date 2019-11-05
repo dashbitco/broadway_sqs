@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.5.0 (2019-11-05)
+
+  * Update to Broadway v0.5.0
+
 ## v0.4.0 (2019-09-26)
 
   * Replace option `:queue_name` with `:queue_url` to keep compatibility with ex_aws_sqs >= v3.0.0
