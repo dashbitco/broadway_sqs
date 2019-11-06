@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.6.0-dev
+
+  * Implement `prepare_for_draining/1` to make sure no more messages will be fetched after draining
+
 ## v0.5.0 (2019-11-05)
 
   * Update to Broadway v0.5.0
