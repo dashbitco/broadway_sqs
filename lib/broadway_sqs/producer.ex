@@ -210,13 +210,8 @@ defmodule BroadwaySQS.Producer do
   end
 
   @impl Producer
-  def prepare_for_draining(%{receive_timer: nil} = state) do
-    {:noreply, [], state}
-  end
-
-  @impl Producer
   def prepare_for_draining(%{receive_timer: receive_timer} = state) do
-    Process.cancel_timer(receive_timer)
+    receive_timer && Process.cancel_timer(receive_timer)
     {:noreply, [], %{state | receive_timer: nil}}
   end
 
