@@ -30,10 +30,18 @@ defmodule BroadwaySQS.Producer do
 
     * `:attribute_names` - A list containing the names of attributes that should be
       attached to the response and appended to the `metadata` field of the message.
-      Supported values are `:sender_id`, `:sent_timestamp`, `:approximate_receive_count`,
-      `:approximate_first_receive_timestamp`, `:wait_time_seconds` and
-      `:receive_message_wait_time_seconds`. You can also use `:all` instead of the list
-      if you want to retrieve all attributes.
+      Supported values are:
+
+      * `:sender_id`
+      * `:sent_timestamp`
+      * `:approximate_receive_count`
+      * `:approximate_first_receive_timestamp`
+      * `:sequence_number`
+      * `:message_deduplication_id`
+      * `:message_group_id`
+      * `:aws_trace_header`
+
+      You can also use `:all` instead of the list if you want to retrieve all attributes.
 
     * `:message_attribute_names` - A list containing the names of custom message attributes
       that should be attached to the response and appended to the `metadata` field of the

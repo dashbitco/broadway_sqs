@@ -20,8 +20,10 @@ defmodule BroadwaySQS.ExAwsClient do
     :sent_timestamp,
     :approximate_receive_count,
     :approximate_first_receive_timestamp,
-    :wait_time_seconds,
-    :receive_message_wait_time_seconds
+    :sequence_number,
+    :message_deduplication_id,
+    :message_group_id,
+    :aws_trace_header
   ]
 
   @impl true
