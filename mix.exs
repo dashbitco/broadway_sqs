@@ -26,7 +26,7 @@ defmodule BroadwaySqs.MixProject do
 
   defp deps do
     [
-      {:broadway, git: "https://github.com/plataformatec/broadway.git"},
+      {:broadway, git: "https://github.com/dashbitco/broadway.git"},
       {:ex_aws_sqs, "~> 3.0"},
       {:hackney, "~> 1.9", only: [:dev]},
       {:sweet_xml, "~> 0.6"},
@@ -38,14 +38,14 @@ defmodule BroadwaySqs.MixProject do
     [
       main: "BroadwaySQS.Producer",
       source_ref: "v#{@version}",
-      source_url: "https://github.com/plataformatec/broadway_sqs"
+      source_url: "https://github.com/dashbitco/broadway_sqs"
     ]
   end
 
   defp package do
     %{
       licenses: ["Apache-2.0"],
-      links: %{"GitHub" => "https://github.com/plataformatec/broadway_sqs"}
+      links: %{"GitHub" => "https://github.com/dashbitco/broadway_sqs"}
     }
   end
 end

@@ -1,6 +1,6 @@
 # BroadwaySQS
 
-A AWS SQS connector for [Broadway](https://github.com/plataformatec/broadway).
+A AWS SQS connector for [Broadway](https://github.com/dashbitco/broadway).
 
 Documentation can be found at [https://hexdocs.pm/broadway_sqs](https://hexdocs.pm/broadway_sqs).
 For more details on using Broadway with Amazon SQS, please see the
@@ -38,6 +38,7 @@ Broadway.start_link(MyBroadway,
 ## License
 
 Copyright 2019 Plataformatec
+Copyright 2020 Dashbit
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.

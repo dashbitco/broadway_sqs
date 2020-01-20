@@ -1,5 +1,5 @@
 %{
-  "broadway": {:git, "https://github.com/plataformatec/broadway.git", "7e961300a233c38126978c64ebf92a97cb078c1a", []},
+  "broadway": {:git, "https://github.com/dashbitco/broadway.git", "7e961300a233c38126978c64ebf92a97cb078c1a", []},
   "certifi": {:hex, :certifi, "2.5.1", "867ce347f7c7d78563450a18a6a28a8090331e77fa02380b4a21962a65d36ee5", [:rebar3], [{:parse_trans, "~>3.3", [hex: :parse_trans, repo: "hexpm", optional: false]}], "hexpm"},
   "earmark": {:hex, :earmark, "1.4.2", "3aa0bd23bc4c61cf2f1e5d752d1bb470560a6f8539974f767a38923bb20e1d7f", [:mix], [], "hexpm"},
   "ex_aws": {:hex, :ex_aws, "2.1.1", "1e4de2106cfbf4e837de41be41cd15813eabc722315e388f0d6bb3732cec47cd", [:mix], [{:configparser_ex, "~> 4.0", [hex: :configparser_ex, repo: "hexpm", optional: true]}, {:hackney, "1.6.3 or 1.6.5 or 1.7.1 or 1.8.6 or ~> 1.9", [hex: :hackney, repo: "hexpm", optional: true]}, {:jsx, "~> 2.8", [hex: :jsx, repo: "hexpm", optional: true]}, {:poison, ">= 1.2.0", [hex: :poison, repo: "hexpm", optional: true]}, {:sweet_xml, "~> 0.6", [hex: :sweet_xml, repo: "hexpm", optional: true]}], "hexpm"},
