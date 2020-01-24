@@ -184,16 +184,16 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
            receive_interval: 0,
            test_pid: self(),
            message_server: message_server},
-        stages: 1
+        concurrency: 1
       ],
       processors: [
-        default: [stages: 1]
+        default: [concurrency: 1]
       ],
       batchers: [
         default: [
           batch_size: 10,
           batch_timeout: 50,
-          stages: 1
+          concurrency: 1
         ]
       ]
     )
