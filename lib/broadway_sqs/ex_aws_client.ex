@@ -67,7 +67,7 @@ defmodule BroadwaySQS.ExAwsClient do
 
     opts.queue_url
     |> ExAws.SQS.delete_message_batch(receipts)
-    |> ExAws.request(opts.config)
+    |> ExAws.request!(opts.config)
   end
 
   defp wrap_received_messages({:ok, %{body: body}}, ack_ref) do
