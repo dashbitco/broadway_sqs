@@ -387,7 +387,7 @@ defmodule BroadwaySQS.ExAwsClientTest do
     end
   end
 
-  describe "ack/2" do
+  describe "ack/3" do
     setup do
       %{
         opts: [
@@ -403,8 +403,8 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
     test "send a SQS/DeleteMessageBatch request", %{opts: base_opts} do
       {:ok, opts} = ExAwsClient.init(base_opts)
-      ack_data_1 = %{sqs_client_opts: opts, receipt: %{id: "1", receipt_handle: "abc"}}
-      ack_data_2 = %{sqs_client_opts: opts, receipt: %{id: "2", receipt_handle: "def"}}
+      ack_data_1 = %{receipt: %{id: "1", receipt_handle: "abc"}}
+      ack_data_2 = %{receipt: %{id: "2", receipt_handle: "def"}}
 
       ExAwsClient.ack(
         opts.ack_ref,
@@ -423,6 +423,39 @@ defmodule BroadwaySQS.ExAwsClientTest do
                  "&DeleteMessageBatchRequestEntry.2.Id=2&DeleteMessageBatchRequestEntry.2.ReceiptHandle=def&QueueUrl=my_queue"
 
       assert url == "https://sqs.us-east-1.amazonaws.com/"
+    end
+
+    test "request with custom :on_success and :on_failure", %{opts: base_opts} do
+      {:ok, opts} = ExAwsClient.init(base_opts ++ [on_success: :noop, on_failure: :ack])
+
+      ack_data_1 = %{receipt: %{id: "1", receipt_handle: "abc"}}
+      ack_data_2 = %{receipt: %{id: "2", receipt_handle: "def"}}
+      ack_data_3 = %{receipt: %{id: "3", receipt_handle: "ghi"}}
+      ack_data_4 = %{receipt: %{id: "4", receipt_handle: "jkl"}}
+
+      message1 = %Message{acknowledger: {ExAwsClient, opts.ack_ref, ack_data_1}, data: nil}
+      message2 = %Message{acknowledger: {ExAwsClient, opts.ack_ref, ack_data_2}, data: nil}
+      message3 = %Message{acknowledger: {ExAwsClient, opts.ack_ref, ack_data_3}, data: nil}
+      message4 = %Message{acknowledger: {ExAwsClient, opts.ack_ref, ack_data_4}, data: nil}
+
+      ExAwsClient.ack(
+        opts.ack_ref,
+        [
+          message1,
+          message2 |> Message.configure_ack(on_success: :ack)
+        ],
+        [
+          message3,
+          message4 |> Message.configure_ack(on_failure: :noop)
+        ]
+      )
+
+      assert_received {:http_request_called, %{body: body}}
+
+      assert body ==
+               "Action=DeleteMessageBatch" <>
+                 "&DeleteMessageBatchRequestEntry.1.Id=2&DeleteMessageBatchRequestEntry.1.ReceiptHandle=def" <>
+                 "&DeleteMessageBatchRequestEntry.2.Id=3&DeleteMessageBatchRequestEntry.2.ReceiptHandle=ghi&QueueUrl=my_queue"
     end
 
     test "request with custom :config options", %{opts: base_opts} do

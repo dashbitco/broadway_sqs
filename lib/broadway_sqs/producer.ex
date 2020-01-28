@@ -53,6 +53,12 @@ defmodule BroadwaySQS.Producer do
       `:scheme`, `:region` and `:port`. For a complete list of configuration options and
       their default values, please see the `ExAws` documentation.
 
+    * `:on_success` - configures the acking behaviour for successful messages. See the
+      "Acknowledgments" section below for all the possible values. Defaults to `:ack`.
+
+    * `:on_failure` - configures the acking behaviour for failed messages. See the
+      "Acknowledgments" section below for all the possible values. Defaults to `:noop`.
+
   ## Producer Options
 
   These options applies to all producers, regardless of client implementation:
@@ -68,13 +74,22 @@ defmodule BroadwaySQS.Producer do
 
   ## Acknowledgments
 
-  In case of successful processing, the message is properly acknowledge to SQS.
-  In case of failures, no message is acknowledged, which means Amazon SQS will
-  eventually redeliver the message or remove it based on the "Visibility Timeout"
-  and "Max Receive Count" configurations. For more information, see:
+  You can use the `:on_success` and `:on_failure` options to control how messages are
+  acked on SQS. You can set these options when starting the SQS producer or change them
+  for each message through `Broadway.Message.configure_ack/2`. By default, successful
+  messages are acked (`:ack`) and failed messages are not (`:noop`).
 
-    * ["Visibility Timeout" page on Amazon SQS](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html)
-    * ["Dead Letter Queue" page on Amazon SQS](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html)
+  The possible values for `:on_success` and `:on_failure` are:
+
+    * `:ack` - acknowledge the message. SQS will delete the message from the queue
+      and will not redeliver it to any other consumer.
+
+    * `:noop` - do not acknowledge the message. SQS will eventually redeliver the message
+    or remove it based on the "Visibility Timeout" and "Max Receive Count"
+    configurations. For more information, see:
+
+      * ["Visibility Timeout" page on Amazon SQS](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html)
+      * ["Dead Letter Queue" page on Amazon SQS](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-dead-letter-queues.html)
 
   ### Batching
 
