@@ -30,8 +30,16 @@ defmodule BroadwaySQS.ExAwsClient do
   def init(opts) do
     with {:ok, queue_url} <- validate(opts, :queue_url, required: true),
          {:ok, receive_messages_opts} <- validate_receive_messages_opts(opts),
-         {:ok, config} <- validate(opts, :config, default: []) do
-      ack_ref = Broadway.TermStorage.put(%{queue_url: queue_url, config: config})
+         {:ok, config} <- validate(opts, :config, default: []),
+         {:ok, on_success} <- validate(opts, :on_success, default: :ack),
+         {:ok, on_failure} <- validate(opts, :on_failure, default: :noop) do
+      ack_ref =
+        Broadway.TermStorage.put(%{
+          queue_url: queue_url,
+          config: config,
+          on_success: on_success,
+          on_failure: on_failure
+        })
 
       {:ok,
        %{
@@ -54,20 +62,48 @@ defmodule BroadwaySQS.ExAwsClient do
   end
 
   @impl true
-  def ack(ack_ref, successful, _failed) do
-    successful
+  def ack(ack_ref, successful, failed) do
+    ack_options = Broadway.TermStorage.get!(ack_ref)
+
+    messages =
+      Enum.filter(successful, &ack?(&1, ack_options, :on_success)) ++
+        Enum.filter(failed, &ack?(&1, ack_options, :on_failure))
+
+    messages
     |> Enum.chunk_every(@max_num_messages_allowed_by_aws)
-    |> Enum.each(fn messages -> delete_messages(messages, ack_ref) end)
+    |> Enum.each(fn messages -> delete_messages(messages, ack_options) end)
   end
 
-  defp delete_messages(messages, ack_ref) do
+  defp ack?(message, ack_options, option) do
+    {_, _, message_ack_options} = message.acknowledger
+    (message_ack_options[option] || Map.fetch!(ack_options, option)) == :ack
+  end
+
+  @impl true
+  def configure(_ack_ref, ack_options, options) do
+    validate_configure_options!(options)
+    {:ok, Map.merge(ack_options, Map.new(options))}
+  end
+
+  defp validate_configure_options!(options) do
+    Enum.each(options, fn {option, value} ->
+      with true <- option in [:on_success, :on_failure],
+           {:ok, _} <- validate_option(option, value) do
+        :ok
+      else
+        _ ->
+          raise ArgumentError,
+                "unsupported configure option #{inspect(option)} => #{inspect(value)}"
+      end
+    end)
+  end
+
+  defp delete_messages(messages, ack_options) do
     receipts = Enum.map(messages, &extract_message_receipt/1)
 
-    opts = Broadway.TermStorage.get!(ack_ref)
-
-    opts.queue_url
+    ack_options.queue_url
     |> ExAws.SQS.delete_message_batch(receipts)
-    |> ExAws.request!(opts.config)
+    |> ExAws.request!(ack_options.config)
   end
 
   defp wrap_received_messages({:ok, %{body: body}}, ack_ref) do
@@ -166,6 +202,14 @@ defmodule BroadwaySQS.ExAwsClient do
       {:ok, value}
     else
       validation_error(:message_attribute_names, ":all or a list of non empty strings", value)
+    end
+  end
+
+  defp validate_option(option, value) when option in [:on_success, :on_failure] do
+    if value in [:ack, :noop] do
+      {:ok, value}
+    else
+      validation_error(option, ":ack or :noop", value)
     end
   end
 
