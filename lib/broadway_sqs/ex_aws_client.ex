@@ -209,11 +209,7 @@ defmodule BroadwaySQS.ExAwsClient do
     if value in [:ack, :noop] do
       {:ok, value}
     else
-      validation_error(
-        option,
-        ":ack or :noop",
-        value
-      )
+      validation_error(option, ":ack or :noop", value)
     end
   end
 
