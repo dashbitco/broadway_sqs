@@ -26,7 +26,7 @@ defmodule BroadwaySqs.MixProject do
 
   defp deps do
     [
-      {:broadway, git: "https://github.com/dashbitco/broadway.git"},
+      {:broadway, "~> 0.6.0-rc"},
       {:ex_aws_sqs, "~> 3.0"},
       {:hackney, "~> 1.9", only: [:dev]},
       {:sweet_xml, "~> 0.6"},
