@@ -1,8 +1,11 @@
 # Changelog
 
-## v0.6.0-dev
+## v0.6.0
 
   * Implement `prepare_for_draining/1` to make sure no more messages will be fetched after draining
+  * Add `:on_success` and `:on_failure` options
+  * Crash on ack error
+  * Update to Broadway v0.6.0
 
 ## v0.5.0 (2019-11-05)
 
