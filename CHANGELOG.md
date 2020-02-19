@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.6.0
+## v0.6.0 (2020-02-19)
 
   * Implement `prepare_for_draining/1` to make sure no more messages will be fetched after draining
   * Add `:on_success` and `:on_failure` options
