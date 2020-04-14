@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.6.1 (2020-04-14)
+
+  * Depend on ex_aws_sqs with the faster Saxy support
+
 ## v0.6.0 (2020-02-19)
 
   * Implement `prepare_for_draining/1` to make sure no more messages will be fetched after draining

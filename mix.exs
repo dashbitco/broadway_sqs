@@ -1,7 +1,7 @@
 defmodule BroadwaySqs.MixProject do
   use Mix.Project
 
-  @version "0.6.0"
+  @version "0.6.1"
   @description "A SQS connector for Broadway"
 
   def project do
@@ -27,9 +27,9 @@ defmodule BroadwaySqs.MixProject do
   defp deps do
     [
       {:broadway, "~> 0.6.0"},
-      {:ex_aws_sqs, "~> 3.0"},
+      {:ex_aws_sqs, "~> 3.2.1 or ~> 3.3"},
       {:hackney, "~> 1.9", only: [:dev]},
-      {:sweet_xml, "~> 0.6"},
+      {:saxy, "~> 1.1"},
       {:ex_doc, ">= 0.19.0", only: :docs}
     ]
   end
