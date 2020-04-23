@@ -45,8 +45,8 @@ defmodule BroadwaySQS.Producer do
 
     * `:message_attribute_names` - A list containing the names of custom message attributes
       that should be attached to the response and appended to the `metadata` field of the
-      message. You can also use `:all` instead of the list if you want to retrieve all
-      attributes.
+      message. Wildcards `[".*"]` and prefixes `["bar.*"]` will retrieve multiple fields. 
+      You can also use `:all` instead of the list if you want to retrieve all attributes.
 
     * `:config` - Optional. A set of options that overrides the default ExAws configuration
       options. The most commonly used options are: `:access_key_id`, `:secret_access_key`,
@@ -171,7 +171,7 @@ defmodule BroadwaySQS.Producer do
       end
 
   For more information on the `:attributes_names` and `:message_attributes_names`
-  options.
+  options, see ["AttributeName.N" and "MessageAttributeName.N" on the ReceiveMessage documentation](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html)
   """
 
   use GenStage
