@@ -80,9 +80,9 @@ defmodule BroadwaySQS.ExAwsClient do
   end
 
   @impl Acknowledger
-  def configure(_ack_ref, ack_options, options) do
+  def configure(_ack_ref, ack_data, options) do
     validate_configure_options!(options)
-    {:ok, Map.merge(ack_options, Map.new(options))}
+    {:ok, Map.merge(ack_data, Map.new(options))}
   end
 
   defp validate_configure_options!(options) do
