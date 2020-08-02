@@ -61,7 +61,7 @@ defmodule BroadwaySQS.ExAwsClient do
     |> wrap_received_messages(opts.ack_ref)
   end
 
-  @impl true
+  @impl Acknowledger
   def ack(ack_ref, successful, failed) do
     ack_options = Broadway.TermStorage.get!(ack_ref)
 
@@ -79,10 +79,10 @@ defmodule BroadwaySQS.ExAwsClient do
     (message_ack_options[option] || Map.fetch!(ack_options, option)) == :ack
   end
 
-  @impl true
-  def configure(_ack_ref, ack_options, options) do
+  @impl Acknowledger
+  def configure(_ack_ref, ack_data, options) do
     validate_configure_options!(options)
-    {:ok, Map.merge(ack_options, Map.new(options))}
+    {:ok, Map.merge(ack_data, Map.new(options))}
   end
 
   defp validate_configure_options!(options) do
