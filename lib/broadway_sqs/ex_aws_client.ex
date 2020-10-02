@@ -33,13 +33,14 @@ defmodule BroadwaySQS.ExAwsClient do
          {:ok, config} <- validate(opts, :config, default: []),
          {:ok, on_success} <- validate(opts, :on_success, default: :ack),
          {:ok, on_failure} <- validate(opts, :on_failure, default: :noop) do
-      ack_ref =
-        BroadwaySQS.TermStorage.put(%{
-          queue_url: queue_url,
-          config: config,
-          on_success: on_success,
-          on_failure: on_failure
-        })
+      ack_ref = opts[:broadway][:name]
+
+      :persistent_term.put(ack_ref, %{
+        queue_url: queue_url,
+        config: config,
+        on_success: on_success,
+        on_failure: on_failure
+      })
 
       {:ok,
        %{
@@ -63,7 +64,7 @@ defmodule BroadwaySQS.ExAwsClient do
 
   @impl Acknowledger
   def ack(ack_ref, successful, failed) do
-    ack_options = BroadwaySQS.TermStorage.get!(ack_ref)
+    ack_options = :persistent_term.get(ack_ref)
 
     messages =
       Enum.filter(successful, &ack?(&1, ack_options, :on_success)) ++
