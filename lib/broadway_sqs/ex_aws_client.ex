@@ -28,33 +28,13 @@ defmodule BroadwaySQS.ExAwsClient do
 
   @impl true
   def init(opts) do
-    with {:ok, queue_url} <- validate(opts, :queue_url, required: true),
-         {:ok, receive_messages_opts} <- validate_receive_messages_opts(opts),
-         {:ok, config} <- validate(opts, :config, default: []),
-         {:ok, on_success} <- validate(opts, :on_success, default: :ack),
-         {:ok, on_failure} <- validate(opts, :on_failure, default: :noop) do
-      ack_ref = opts[:broadway][:name]
-
-      :persistent_term.put(ack_ref, %{
-        queue_url: queue_url,
-        config: config,
-        on_success: on_success,
-        on_failure: on_failure
-      })
-
-      {:ok,
-       %{
-         queue_url: queue_url,
-         receive_messages_opts: receive_messages_opts,
-         config: config,
-         ack_ref: ack_ref
-       }}
-    end
+    opts_map = opts |> Enum.into(%{ack_ref: opts[:broadway][:name]})
+    {:ok, opts_map}
   end
 
   @impl true
   def receive_messages(demand, opts) do
-    receive_messages_opts = put_max_number_of_messages(opts.receive_messages_opts, demand)
+    receive_messages_opts = build_receive_messages_opts(opts, demand)
 
     opts.queue_url
     |> ExAws.SQS.receive_message(receive_messages_opts)
@@ -125,9 +105,17 @@ defmodule BroadwaySQS.ExAwsClient do
     {__MODULE__, ack_ref, %{receipt: receipt}}
   end
 
-  defp put_max_number_of_messages(receive_messages_opts, demand) do
-    max_number_of_messages = min(demand, receive_messages_opts[:max_number_of_messages])
-    Keyword.put(receive_messages_opts, :max_number_of_messages, max_number_of_messages)
+  defp build_receive_messages_opts(opts, demand) do
+    max_number_of_messages = min(demand, opts[:max_number_of_messages])
+
+    [
+      max_number_of_messages: max_number_of_messages,
+      wait_time_seconds: opts[:wait_time_seconds],
+      visibility_timeout: opts[:visibility_timeout],
+      attribute_names: opts[:attribute_names],
+      message_attribute_names: opts[:message_attribute_names]
+    ]
+    |> Enum.filter(fn {_, value} -> value end)
   end
 
   defp extract_message_receipt(message) do

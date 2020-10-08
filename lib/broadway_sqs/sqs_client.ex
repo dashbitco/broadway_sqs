@@ -4,14 +4,14 @@ defmodule BroadwaySQS.SQSClient do
   This module defines callbacks to normalize options and receive message
   from a SQS queue. Modules that implement this behaviour should be passed
   as the `:sqs_client` option from `BroadwaySQS.Producer`.
-
   """
 
   alias Broadway.Message
 
   @type messages :: [Message.t()]
 
-  @callback init(opts :: any) :: {:ok, normalized_opts :: any} | {:error, reason :: binary}
+  @callback prepare_for_start(module :: atom(), options :: keyword()) ::
+              {[:supervisor.child_spec() | {module(), any()} | module()], options :: keyword()}
 
   @callback receive_messages(demand :: pos_integer, opts :: any) :: messages
 end

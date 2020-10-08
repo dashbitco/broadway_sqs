@@ -62,217 +62,12 @@ defmodule BroadwaySQS.ExAwsClientTest do
     end
   end
 
-  describe "validate init options" do
-    test ":queue_url is required" do
-      assert ExAwsClient.init([]) ==
-               {:error, ":queue_url is required"}
-
-      assert ExAwsClient.init(queue_url: nil) ==
-               {:error, "expected :queue_url to be a non empty string, got: nil"}
-    end
-
-    test ":queue_url should be a non empty string" do
-      assert ExAwsClient.init(queue_url: "") ==
-               {:error, "expected :queue_url to be a non empty string, got: \"\""}
-
-      assert ExAwsClient.init(queue_url: :an_atom) ==
-               {:error, "expected :queue_url to be a non empty string, got: :an_atom"}
-
-      {:ok, %{queue_url: queue_url}} = ExAwsClient.init(queue_url: "my_queue")
-      assert queue_url == "my_queue"
-    end
-
-    test ":attribute_names is optional without default value" do
-      {:ok, result} = ExAwsClient.init(queue_url: "my_queue")
-
-      refute Keyword.has_key?(result.receive_messages_opts, :attribute_names)
-    end
-
-    test ":attribute_names should be a list containing any of the supported attributes" do
-      all_attribute_names = [
-        :sender_id,
-        :sent_timestamp,
-        :approximate_receive_count,
-        :approximate_first_receive_timestamp,
-        :sequence_number,
-        :message_deduplication_id,
-        :message_group_id,
-        :aws_trace_header
-      ]
-
-      {:ok, result} =
-        ExAwsClient.init(queue_url: "my_queue", attribute_names: all_attribute_names)
-
-      assert result.receive_messages_opts[:attribute_names] == all_attribute_names
-
-      attribute_names = [:approximate_receive_count, :unsupported]
-
-      {:error, message} =
-        ExAwsClient.init(queue_url: "my_queue", attribute_names: attribute_names)
-
-      assert message ==
-               "expected :attribute_names to be :all or a list containing any of " <>
-                 inspect(all_attribute_names) <>
-                 ", got: [:approximate_receive_count, :unsupported]"
-    end
-
-    test ":message_attribute_names is optional without default value" do
-      {:ok, result} = ExAwsClient.init(queue_url: "my_queue")
-
-      refute Keyword.has_key?(result.receive_messages_opts, :message_attribute_names)
-    end
-
-    test ":message_attribute_names should be a list of non empty strings" do
-      {:ok, result} =
-        ExAwsClient.init(queue_url: "my_queue", message_attribute_names: ["attr_1", "attr_2"])
-
-      assert result.receive_messages_opts[:message_attribute_names] == ["attr_1", "attr_2"]
-
-      {:error, message} =
-        ExAwsClient.init(
-          queue_url: "my_queue",
-          message_attribute_names: ["attr_1", :not_a_string]
-        )
-
-      assert message ==
-               "expected :message_attribute_names to be :all or a list of non empty strings" <>
-                 ", got: [\"attr_1\", :not_a_string]"
-    end
-
-    test ":wait_time_seconds is optional without default value" do
-      {:ok, result} = ExAwsClient.init(queue_url: "my_queue")
-
-      refute Keyword.has_key?(result.receive_messages_opts, :wait_time_seconds)
-    end
-
-    test ":wait_time_seconds should be a non negative integer" do
-      opts = [queue_url: "my_queue"]
-
-      {:ok, result} = opts |> Keyword.put(:wait_time_seconds, 0) |> ExAwsClient.init()
-      assert result.receive_messages_opts[:wait_time_seconds] == 0
-
-      {:ok, result} = opts |> Keyword.put(:wait_time_seconds, 10) |> ExAwsClient.init()
-      assert result.receive_messages_opts[:wait_time_seconds] == 10
-
-      {:error, message} = opts |> Keyword.put(:wait_time_seconds, -1) |> ExAwsClient.init()
-      assert message == "expected :wait_time_seconds to be a non negative integer, got: -1"
-
-      {:error, message} = opts |> Keyword.put(:wait_time_seconds, :an_atom) |> ExAwsClient.init()
-      assert message == "expected :wait_time_seconds to be a non negative integer, got: :an_atom"
-    end
-
-    test ":max_number_of_messages is optional with default value 10" do
-      {:ok, result} = ExAwsClient.init(queue_url: "my_queue")
-
-      assert result.receive_messages_opts[:max_number_of_messages] == 10
-    end
-
-    test ":max_number_of_messages should be an integer between 1 and 10" do
-      opts = [queue_url: "my_queue"]
-
-      {:ok, result} = opts |> Keyword.put(:max_number_of_messages, 1) |> ExAwsClient.init()
-      assert result.receive_messages_opts[:max_number_of_messages] == 1
-
-      {:ok, result} = opts |> Keyword.put(:max_number_of_messages, 10) |> ExAwsClient.init()
-      assert result.receive_messages_opts[:max_number_of_messages] == 10
-
-      {:error, message} = opts |> Keyword.put(:max_number_of_messages, 0) |> ExAwsClient.init()
-
-      assert message ==
-               "expected :max_number_of_messages to be an integer between 1 and 10, got: 0"
-
-      {:error, message} = opts |> Keyword.put(:max_number_of_messages, 11) |> ExAwsClient.init()
-
-      assert message ==
-               "expected :max_number_of_messages to be an integer between 1 and 10, got: 11"
-
-      {:error, message} =
-        opts |> Keyword.put(:max_number_of_messages, :an_atom) |> ExAwsClient.init()
-
-      assert message ==
-               "expected :max_number_of_messages to be an integer between 1 and 10, got: :an_atom"
-    end
-
-    test ":config is optional with default value []" do
-      {:ok, result} = ExAwsClient.init(queue_url: "my_queue")
-      assert result.config == []
-    end
-
-    test ":config should be a keyword list" do
-      opts = [queue_url: "my_queue"]
-
-      config = [scheme: "https://", region: "us-east-1"]
-      {:ok, result} = opts |> Keyword.put(:config, config) |> ExAwsClient.init()
-      assert result.config == [scheme: "https://", region: "us-east-1"]
-
-      config = :an_atom
-      {:error, message} = opts |> Keyword.put(:config, config) |> ExAwsClient.init()
-      assert message == "expected :config to be a keyword list, got: :an_atom"
-    end
-
-    test ":visibility_timeout should be a non negative integer" do
-      opts = [queue_url: "my_queue"]
-
-      {:ok, result} = opts |> Keyword.put(:visibility_timeout, 0) |> ExAwsClient.init()
-      assert result.receive_messages_opts[:visibility_timeout] == 0
-
-      {:ok, result} = opts |> Keyword.put(:visibility_timeout, 256) |> ExAwsClient.init()
-      assert result.receive_messages_opts[:visibility_timeout] == 256
-
-      {:error, message} = opts |> Keyword.put(:visibility_timeout, -1) |> ExAwsClient.init()
-
-      assert message ==
-               "expected :visibility_timeout to be an integer between 0 and 43200, got: -1"
-
-      {:error, message} = opts |> Keyword.put(:visibility_timeout, :an_atom) |> ExAwsClient.init()
-
-      assert message ==
-               "expected :visibility_timeout to be an integer between 0 and 43200, got: :an_atom"
-    end
-
-    test ":visibility_timeout is optional without default value" do
-      {:ok, result} = ExAwsClient.init(queue_url: "my_queue")
-
-      refute Keyword.has_key?(result.receive_messages_opts, :visibility_timeout)
-    end
-
-    test ":visibility_timeout should be an integer between 0 seconds and 12 hours" do
-      opts = [queue_url: "my_queue"]
-
-      {:ok, result} = opts |> Keyword.put(:visibility_timeout, 0) |> ExAwsClient.init()
-      assert result.receive_messages_opts[:visibility_timeout] == 0
-
-      max_visibility_timeout = 12 * 60 * 60
-
-      {:ok, result} =
-        opts |> Keyword.put(:visibility_timeout, max_visibility_timeout) |> ExAwsClient.init()
-
-      assert result.receive_messages_opts[:visibility_timeout] == max_visibility_timeout
-
-      {:error, message} = opts |> Keyword.put(:visibility_timeout, -1) |> ExAwsClient.init()
-
-      assert message ==
-               "expected :visibility_timeout to be an integer between 0 and 43200, got: -1"
-
-      one_day_in_seconds = 24 * 60 * 60
-
-      {:error, message} =
-        opts |> Keyword.put(:visibility_timeout, one_day_in_seconds) |> ExAwsClient.init()
-
-      assert message ==
-               "expected :visibility_timeout to be an integer between 0 and 43200, got: 86400"
-
-      {:error, message} = opts |> Keyword.put(:visibility_timeout, :an_atom) |> ExAwsClient.init()
-
-      assert message ==
-               "expected :visibility_timeout to be an integer between 0 and 43200, got: :an_atom"
-    end
-  end
-
   describe "receive_messages/2" do
     setup do
       %{
         opts: [
+          # will be injected by broadway at runtime
+          broadway: [name: :Broadway3],
           queue_url: "my_queue",
           config: [
             http_client: FakeHttpClient,
@@ -391,12 +186,16 @@ defmodule BroadwaySQS.ExAwsClientTest do
     setup do
       %{
         opts: [
+          # will be injected by broadway at runtime
+          broadway: [name: :Broadway3],
           queue_url: "my_queue",
           config: [
             http_client: FakeHttpClient,
             access_key_id: "FAKE_ID",
             secret_access_key: "FAKE_KEY"
-          ]
+          ],
+          on_success: :ack,
+          on_error: :noop
         ]
       }
     end
@@ -405,6 +204,8 @@ defmodule BroadwaySQS.ExAwsClientTest do
       {:ok, opts} = ExAwsClient.init(base_opts)
       ack_data_1 = %{receipt: %{id: "1", receipt_handle: "abc"}}
       ack_data_2 = %{receipt: %{id: "2", receipt_handle: "def"}}
+
+      fill_persistent_term(opts.ack_ref, base_opts)
 
       ExAwsClient.ack(
         opts.ack_ref,
@@ -427,6 +228,13 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
     test "request with custom :on_success and :on_failure", %{opts: base_opts} do
       {:ok, opts} = ExAwsClient.init(base_opts ++ [on_success: :noop, on_failure: :ack])
+
+      :persistent_term.put(opts.ack_ref, %{
+        queue_url: opts[:queue_url],
+        config: opts[:config],
+        on_success: opts[:on_success],
+        on_failure: opts[:on_failure]
+      })
 
       ack_data_1 = %{receipt: %{id: "1", receipt_handle: "abc"}}
       ack_data_2 = %{receipt: %{id: "2", receipt_handle: "def"}}
@@ -468,6 +276,13 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
       {:ok, opts} = Keyword.put(base_opts, :config, config) |> ExAwsClient.init()
 
+      :persistent_term.put(opts.ack_ref, %{
+        queue_url: opts[:queue_url],
+        config: opts[:config],
+        on_success: opts[:on_success],
+        on_failure: opts[:on_failure]
+      })
+
       ack_data = %{receipt: %{id: "1", receipt_handle: "abc"}}
       message = %Message{acknowledger: {ExAwsClient, opts.ack_ref, ack_data}, data: nil}
 
@@ -476,5 +291,14 @@ defmodule BroadwaySQS.ExAwsClientTest do
       assert_received {:http_request_called, %{url: url}}
       assert url == "http://localhost:9324/"
     end
+  end
+
+  defp fill_persistent_term(ack_ref, base_opts) do
+    :persistent_term.put(ack_ref, %{
+      queue_url: base_opts[:queue_url],
+      config: base_opts[:config],
+      on_success: base_opts[:on_success] || :ack,
+      on_failure: base_opts[:on_failure] || :noop
+    })
   end
 end

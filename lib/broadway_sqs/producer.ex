@@ -45,7 +45,7 @@ defmodule BroadwaySQS.Producer do
 
     * `:message_attribute_names` - A list containing the names of custom message attributes
       that should be attached to the response and appended to the `metadata` field of the
-      message. Wildcards `[".*"]` and prefixes `["bar.*"]` will retrieve multiple fields. 
+      message. Wildcards `[".*"]` and prefixes `["bar.*"]` will retrieve multiple fields.
       You can also use `:all` instead of the list if you want to retrieve all attributes.
 
     * `:config` - Optional. A set of options that overrides the default ExAws configuration
@@ -178,17 +178,44 @@ defmodule BroadwaySQS.Producer do
 
   require Logger
   alias Broadway.Producer
+  alias NimbleOptions.ValidationError
 
   @behaviour Producer
 
   @default_receive_interval 5000
+  # TODO use these values in validation
+  # @default_max_number_of_messages 10
+  # @max_num_messages_allowed_by_aws 10
+  # @max_visibility_timeout_allowed_by_aws_in_seconds 12 * 60 * 60
+  # @supported_attributes [
+  #   :sender_id,
+  #   :sent_timestamp,
+  #   :approximate_receive_count,
+  #   :approximate_first_receive_timestamp,
+  #   :sequence_number,
+  #   :message_deduplication_id,
+  #   :message_group_id,
+  #   :aws_trace_header
+  # ]
 
   @impl true
   def init(opts) do
-    client = opts[:sqs_client] || BroadwaySQS.ExAwsClient
     receive_interval = opts[:receive_interval] || @default_receive_interval
 
-    if Keyword.has_key?(opts, :queue_name) do
+    {:producer,
+     %{
+       demand: 0,
+       receive_timer: nil,
+       receive_interval: receive_interval,
+       sqs_client: {opts[:sqs_client], opts}
+     }}
+  end
+
+  @impl true
+  def prepare_for_start(module, broadway_opts) do
+    {_, client_opts} = broadway_opts[:producer][:module]
+
+    if Keyword.has_key?(client_opts, :queue_name) do
       Logger.error(
         "The option :queue_name has been removed in order to keep compatibility with " <>
           "ex_aws_sqs >= v3.0.0. Please set the queue URL using the new :queue_url option."
@@ -197,19 +224,36 @@ defmodule BroadwaySQS.Producer do
       exit(:invalid_config)
     end
 
-    case client.init(opts) do
-      {:error, message} ->
-        raise ArgumentError, "invalid options given to #{inspect(client)}.init/1, " <> message
+    case NimbleOptions.validate(client_opts, BroadwaySQS.Options.definition()) do
+      {:error, error} ->
+        raise ArgumentError, format_error(error)
 
       {:ok, opts} ->
-        {:producer,
-         %{
-           demand: 0,
-           receive_timer: nil,
-           receive_interval: receive_interval,
-           sqs_client: {client, opts}
-         }}
+        ack_ref = broadway_opts[:broadway][:name]
+
+        :persistent_term.put(ack_ref, %{
+          queue_url: opts[:queue_url],
+          config: opts[:config],
+          on_success: opts[:on_success],
+          on_failure: opts[:on_failure]
+        })
+
+        {producer_module, _broadway_module_opts} = broadway_opts[:producer][:module]
+
+        broadway_opts_with_defaults =
+          put_in(broadway_opts, [:producer, :module], {producer_module, opts})
+
+        {[module], broadway_opts_with_defaults}
     end
+  end
+
+  defp format_error(%ValidationError{keys_path: [], message: message}) do
+    "invalid configuration given to SQSBroadway.prepare_for_start/2, " <> message
+  end
+
+  defp format_error(%ValidationError{keys_path: keys_path, message: message}) do
+    "invalid configuration given to SQSBroadway.prepare_for_start/2 for key #{inspect(keys_path)}, " <>
+      message
   end
 
   @impl true
