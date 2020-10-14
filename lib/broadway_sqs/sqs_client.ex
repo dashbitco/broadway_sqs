@@ -10,8 +10,5 @@ defmodule BroadwaySQS.SQSClient do
 
   @type messages :: [Message.t()]
 
-  @callback prepare_for_start(module :: atom(), options :: keyword()) ::
-              {[:supervisor.child_spec() | {module(), any()} | module()], options :: keyword()}
-
   @callback receive_messages(demand :: pos_integer, opts :: any) :: messages
 end
