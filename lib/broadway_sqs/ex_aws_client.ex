@@ -14,6 +14,7 @@ defmodule BroadwaySQS.ExAwsClient do
 
   @max_num_messages_allowed_by_aws 10
 
+  @impl true
   def init(opts) do
     opts_map = opts |> Enum.into(%{ack_ref: opts[:broadway][:name]})
     {:ok, opts_map}

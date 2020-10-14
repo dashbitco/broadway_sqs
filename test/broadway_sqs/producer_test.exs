@@ -22,6 +22,11 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     @behaviour Broadway.Acknowledger
 
     @impl true
+    def init(opts) do
+      {:ok, opts}
+    end
+
+    @impl true
     def receive_messages(amount, opts) do
       messages = MessageServer.take_messages(opts[:message_server], amount)
       send(opts[:test_pid], {:messages_received, length(messages)})

@@ -138,20 +138,6 @@ defmodule BroadwaySQS.Producer do
   @behaviour Producer
 
   @default_receive_interval 5000
-  # TODO use these values in validation
-  # @default_max_number_of_messages 10
-  # @max_num_messages_allowed_by_aws 10
-  # @max_visibility_timeout_allowed_by_aws_in_seconds 12 * 60 * 60
-  # @supported_attributes [
-  #   :sender_id,
-  #   :sent_timestamp,
-  #   :approximate_receive_count,
-  #   :approximate_first_receive_timestamp,
-  #   :sequence_number,
-  #   :message_deduplication_id,
-  #   :message_group_id,
-  #   :aws_trace_header
-  # ]
 
   @impl true
   def init(opts) do
