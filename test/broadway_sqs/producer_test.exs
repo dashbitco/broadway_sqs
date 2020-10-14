@@ -153,7 +153,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
       refute Keyword.has_key?(result_module_opts, :attribute_names)
     end
 
-    test ":attribute_names should be a list containing any of the supported attributes" do
+    test "when :attribute_names is a list containing any of the supported attributes" do
       all_attribute_names = [
         :sender_id,
         :sent_timestamp,
@@ -193,6 +193,22 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
       )
     end
 
+    test "when :attribute_names is :all" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+                 attribute_names: :all
+               )
+
+      assert result_module_opts[:attribute_names] == :all
+    end
+
     test ":message_attribute_names is optional without default value" do
       assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
               [
@@ -208,7 +224,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
       refute Keyword.has_key?(result_module_opts, :message_attribute_names)
     end
 
-    test ":message_attribute_names should be a list of non empty strings" do
+    test "when :message_attribute_names is a list of non empty strings" do
       assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
               [
                 producer: [
@@ -235,6 +251,22 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
           )
         end
       )
+    end
+
+    test "when :message_attribute_names is :all" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+                 message_attribute_names: :all
+               )
+
+      assert result_module_opts[:message_attribute_names] == :all
     end
 
     test ":wait_time_seconds is optional without default value" do
