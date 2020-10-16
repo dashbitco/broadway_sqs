@@ -185,7 +185,7 @@ defmodule BroadwaySQS.Options do
   end
 
   def type_non_empty_string("", [{:name, name}]) do
-    {:error, "expected :#{name} to be an string, got: \"\""}
+    {:error, "expected :#{name} to be a non-empty string, got: \"\""}
   end
 
   def type_non_empty_string(value, _)
@@ -194,7 +194,7 @@ defmodule BroadwaySQS.Options do
   end
 
   def type_non_empty_string(value, [{:name, name}]) do
-    {:error, "expected :#{name} to be an string, got: #{inspect(value)}"}
+    {:error, "expected :#{name} to be a non-empty string, got: #{inspect(value)}"}
   end
 
   def type_list_limited_member_or_all_atom(:all, _) do

@@ -86,19 +86,20 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
   describe "prepare_for_start/2 validation" do
     test "when the queue url is not present" do
-      assert_raise(
-        ArgumentError,
-        "invalid configuration given to SQSBroadway.prepare_for_start/2, required option :queue_url not found, received options: []",
-        fn ->
-          prepare_for_start_module_opts([])
-        end
-      )
+      message = """
+      invalid configuration given to SQSBroadway.prepare_for_start/2, \
+      required option :queue_url not found, received options: []\
+      """
+
+      assert_raise(ArgumentError, message, fn ->
+        prepare_for_start_module_opts([])
+      end)
     end
 
     test "when the queue url is nil" do
       assert_raise(
         ArgumentError,
-        "invalid configuration given to SQSBroadway.prepare_for_start/2, expected :queue_url to be an string, got: nil",
+        ~r/expected :queue_url to be a non-empty string, got: nil/,
         fn ->
           prepare_for_start_module_opts(queue_url: nil)
         end
@@ -108,7 +109,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     test "when the queue url is an empty string" do
       assert_raise(
         ArgumentError,
-        "invalid configuration given to SQSBroadway.prepare_for_start/2, expected :queue_url to be an string, got: \"\"",
+        ~r/expected :queue_url to be a non-empty string, got: \"\"/,
         fn ->
           prepare_for_start_module_opts(queue_url: "")
         end
@@ -118,7 +119,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     test "when the queue url is an atom" do
       assert_raise(
         ArgumentError,
-        "invalid configuration given to SQSBroadway.prepare_for_start/2, expected :queue_url to be an string, got: :my_queue_url_atom",
+        ~r/expected :queue_url to be a non-empty string, got: :my_queue_url_atom/,
         fn ->
           prepare_for_start_module_opts(queue_url: :my_queue_url_atom)
         end
@@ -183,9 +184,17 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
       bad_attribute_names = [:approximate_receive_count, :unsupported]
 
+      expected_message = ~r"""
+      expected :attribute_names to be a list with possible members \
+      \[:sender_id, :sent_timestamp, :approximate_receive_count, \
+      :approximate_first_receive_timestamp, :sequence_number, \
+      :message_deduplication_id, :message_group_id, :aws_trace_header\], \
+      got: \[:approximate_receive_count, :unsupported\]\
+      """
+
       assert_raise(
         ArgumentError,
-        "invalid configuration given to SQSBroadway.prepare_for_start/2, expected :attribute_names to be a list with possible members [:sender_id, :sent_timestamp, :approximate_receive_count, :approximate_first_receive_timestamp, :sequence_number, :message_deduplication_id, :message_group_id, :aws_trace_header], got: [:approximate_receive_count, :unsupported]",
+        expected_message,
         fn ->
           prepare_for_start_module_opts(
             queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
@@ -245,7 +254,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
       assert_raise(
         ArgumentError,
-        "invalid configuration given to SQSBroadway.prepare_for_start/2, expected :queue_url to be a list with non-empty strings, got: [:not_a_string]",
+        ~r/expected :queue_url to be a list with non-empty strings, got: \[:not_a_string\]/,
         fn ->
           prepare_for_start_module_opts(
             queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
@@ -317,7 +326,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
       assert_raise(
         ArgumentError,
-        "invalid configuration given to SQSBroadway.prepare_for_start/2, expected :wait_time_seconds to be a non negative integer, got: -1",
+        ~r/expected :wait_time_seconds to be a non negative integer, got: -1/,
         fn ->
           prepare_for_start_module_opts(
             queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
@@ -328,7 +337,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
       assert_raise(
         ArgumentError,
-        "invalid configuration given to SQSBroadway.prepare_for_start/2, expected :wait_time_seconds to be a non negative integer, got: :an_atom",
+        ~r/expected :wait_time_seconds to be a non negative integer, got: :an_atom/,
         fn ->
           prepare_for_start_module_opts(
             queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
@@ -384,7 +393,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
       assert_raise(
         ArgumentError,
-        "invalid configuration given to SQSBroadway.prepare_for_start/2, expected :max_number_of_messages to be an integer between 1 and 10, got: 0",
+        ~r/expected :max_number_of_messages to be an integer between 1 and 10, got: 0/,
         fn ->
           prepare_for_start_module_opts(
             queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
@@ -395,7 +404,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
       assert_raise(
         ArgumentError,
-        "invalid configuration given to SQSBroadway.prepare_for_start/2, expected :max_number_of_messages to be an integer between 1 and 10, got: 11",
+        ~r/expected :max_number_of_messages to be an integer between 1 and 10, got: 11/,
         fn ->
           prepare_for_start_module_opts(
             queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
@@ -437,7 +446,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
       assert_raise(
         ArgumentError,
-        "invalid configuration given to SQSBroadway.prepare_for_start/2, expected :config to be a keyword list, got: :an_atom",
+        ~r/expected :config to be a keyword list, got: :an_atom/,
         fn ->
           prepare_for_start_module_opts(
             queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
@@ -493,7 +502,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
       assert_raise(
         ArgumentError,
-        "invalid configuration given to SQSBroadway.prepare_for_start/2, expected :visibility_timeout to be an integer between 0 and 43200, got: -1",
+        ~r/expected :visibility_timeout to be an integer between 0 and 43200, got: -1/,
         fn ->
           prepare_for_start_module_opts(
             queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
@@ -504,7 +513,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
       assert_raise(
         ArgumentError,
-        "invalid configuration given to SQSBroadway.prepare_for_start/2, expected :visibility_timeout to be an integer between 0 and 43200, got: 142857",
+        ~r/expected :visibility_timeout to be an integer between 0 and 43200, got: 142857/,
         fn ->
           prepare_for_start_module_opts(
             queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
