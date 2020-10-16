@@ -18,9 +18,20 @@ defmodule BroadwaySQS.Options do
         regional endpoint*. For example, `https://sqs.amazonaws.com/0000000000/my_queue`.
         """
       ],
-      sqs_client: [],
+      sqs_client: [
+        doc: """
+        A module that implements the `BroadwaySQS.SQSClient`
+        behaviour. This module is responsible for fetching and acknowledging the
+        messages. Pay attention that all options passed to the producer will be forwarded
+        to the client. Default is `BroadwaySQS.ExAwsClient`.
+        """
+      ],
       receive_interval: [
-        type: :non_neg_integer
+        type: :non_neg_integer,
+        doc: """
+        The duration (in milliseconds) for which the producer
+        waits before making a request for more messages. Default is 5000.
+        """
       ],
       test_pid: [
         type: :pid
@@ -38,7 +49,11 @@ defmodule BroadwaySQS.Options do
       ],
       on_failure: [
         type: :atom,
-        default: :noop
+        default: :noop,
+        doc: """
+        configures the acking behaviour for failed messages. See the
+        "Acknowledgments" section below for all the possible values. Defaults to `:noop`.
+        """
       ],
       config: [
         type: :keyword_list,

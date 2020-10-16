@@ -10,22 +10,13 @@ defmodule BroadwaySQS.Producer do
   For a quick getting started on using Broadway with Amazon SQS, please see
   the [Amazon SQS Guide](https://hexdocs.pm/broadway/amazon-sqs.html).
 
-  ## Options for `BroadwaySQS.ExAwsClient`
+  ## Options
+
+  Aside from `:receive_interval` and `:sqs_client` which are generic and apply to all
+  producers (regardless of the client implementation), all other options are specific to
+  the `BroadwaySQS.ExAwsClient`, which is the default client.
 
   #{NimbleOptions.Docs.generate(BroadwaySQS.Options.definition())}
-
-  ## Producer Options
-
-  These options applies to all producers, regardless of client implementation:
-
-    * `:receive_interval` - Optional. The duration (in milliseconds) for which the producer
-      waits before making a request for more messages. Default is 5000.
-
-    * `:sqs_client` - Optional. A module that implements the `BroadwaySQS.SQSClient`
-      behaviour. This module is responsible for fetching and acknowledging the
-      messages. Pay attention that all options passed to the producer will be forwarded
-      to the client. It's up to the client to normalize the options it needs. Default
-      is `BroadwaySQS.ExAwsClient`.
 
   ## Acknowledgments
 
