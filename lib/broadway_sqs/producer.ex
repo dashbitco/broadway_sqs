@@ -10,67 +10,13 @@ defmodule BroadwaySQS.Producer do
   For a quick getting started on using Broadway with Amazon SQS, please see
   the [Amazon SQS Guide](https://hexdocs.pm/broadway/amazon-sqs.html).
 
-  ## Options for `BroadwaySQS.ExAwsClient`
+  ## Options
 
-    * `:queue_url` - Required. The url for the SQS queue. *Note this does not have to be a
-      regional endpoint*. For example, `https://sqs.amazonaws.com/0000000000/my_queue`.
+  Aside from `:receive_interval` and `:sqs_client` which are generic and apply to all
+  producers (regardless of the client implementation), all other options are specific to
+  the `BroadwaySQS.ExAwsClient`, which is the default client.
 
-    * `:max_number_of_messages` - Optional. The maximum number of messages to be fetched
-      per request. This value must be between `1` and `10`, which is the maximum number
-      allowed by AWS. Default is `10`.
-
-    * `:wait_time_seconds` - Optional. The duration (in seconds) for which the call waits
-      for a message to arrive in the queue before returning. For more information see
-      ["WaitTimeSeconds" on the Amazon SQS documentation](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html).
-
-    * `:visibility_timeout` - Optional. The time period (in seconds) that a message will
-      remain _invisible_ to other consumers whilst still on the queue and not acknowledged.
-      This is passed to SQS when the message (or messages) are read.
-      This value must be between 0 and 43200 (12 hours).
-
-    * `:attribute_names` - A list containing the names of attributes that should be
-      attached to the response and appended to the `metadata` field of the message.
-      Supported values are:
-
-      * `:sender_id`
-      * `:sent_timestamp`
-      * `:approximate_receive_count`
-      * `:approximate_first_receive_timestamp`
-      * `:sequence_number`
-      * `:message_deduplication_id`
-      * `:message_group_id`
-      * `:aws_trace_header`
-
-      You can also use `:all` instead of the list if you want to retrieve all attributes.
-
-    * `:message_attribute_names` - A list containing the names of custom message attributes
-      that should be attached to the response and appended to the `metadata` field of the
-      message. Wildcards `[".*"]` and prefixes `["bar.*"]` will retrieve multiple fields. 
-      You can also use `:all` instead of the list if you want to retrieve all attributes.
-
-    * `:config` - Optional. A set of options that overrides the default ExAws configuration
-      options. The most commonly used options are: `:access_key_id`, `:secret_access_key`,
-      `:scheme`, `:region` and `:port`. For a complete list of configuration options and
-      their default values, please see the `ExAws` documentation.
-
-    * `:on_success` - configures the acking behaviour for successful messages. See the
-      "Acknowledgments" section below for all the possible values. Defaults to `:ack`.
-
-    * `:on_failure` - configures the acking behaviour for failed messages. See the
-      "Acknowledgments" section below for all the possible values. Defaults to `:noop`.
-
-  ## Producer Options
-
-  These options applies to all producers, regardless of client implementation:
-
-    * `:receive_interval` - Optional. The duration (in milliseconds) for which the producer
-      waits before making a request for more messages. Default is 5000.
-
-    * `:sqs_client` - Optional. A module that implements the `BroadwaySQS.SQSClient`
-      behaviour. This module is responsible for fetching and acknowledging the
-      messages. Pay attention that all options passed to the producer will be forwarded
-      to the client. It's up to the client to normalize the options it needs. Default
-      is `BroadwaySQS.ExAwsClient`.
+  #{NimbleOptions.Docs.generate(BroadwaySQS.Options.definition())}
 
   ## Acknowledgments
 
@@ -178,6 +124,7 @@ defmodule BroadwaySQS.Producer do
 
   require Logger
   alias Broadway.Producer
+  alias NimbleOptions.ValidationError
 
   @behaviour Producer
 
@@ -185,10 +132,22 @@ defmodule BroadwaySQS.Producer do
 
   @impl true
   def init(opts) do
-    client = opts[:sqs_client] || BroadwaySQS.ExAwsClient
     receive_interval = opts[:receive_interval] || @default_receive_interval
 
-    if Keyword.has_key?(opts, :queue_name) do
+    {:producer,
+     %{
+       demand: 0,
+       receive_timer: nil,
+       receive_interval: receive_interval,
+       sqs_client: {opts[:sqs_client], opts}
+     }}
+  end
+
+  @impl true
+  def prepare_for_start(module, broadway_opts) do
+    {_, client_opts} = broadway_opts[:producer][:module]
+
+    if Keyword.has_key?(client_opts, :queue_name) do
       Logger.error(
         "The option :queue_name has been removed in order to keep compatibility with " <>
           "ex_aws_sqs >= v3.0.0. Please set the queue URL using the new :queue_url option."
@@ -197,19 +156,36 @@ defmodule BroadwaySQS.Producer do
       exit(:invalid_config)
     end
 
-    case client.init(opts) do
-      {:error, message} ->
-        raise ArgumentError, "invalid options given to #{inspect(client)}.init/1, " <> message
+    case NimbleOptions.validate(client_opts, BroadwaySQS.Options.definition()) do
+      {:error, error} ->
+        raise ArgumentError, format_error(error)
 
       {:ok, opts} ->
-        {:producer,
-         %{
-           demand: 0,
-           receive_timer: nil,
-           receive_interval: receive_interval,
-           sqs_client: {client, opts}
-         }}
+        ack_ref = broadway_opts[:broadway][:name]
+
+        :persistent_term.put(ack_ref, %{
+          queue_url: opts[:queue_url],
+          config: opts[:config],
+          on_success: opts[:on_success],
+          on_failure: opts[:on_failure]
+        })
+
+        {producer_module, _broadway_module_opts} = broadway_opts[:producer][:module]
+
+        broadway_opts_with_defaults =
+          put_in(broadway_opts, [:producer, :module], {producer_module, opts})
+
+        {[module], broadway_opts_with_defaults}
     end
+  end
+
+  defp format_error(%ValidationError{keys_path: [], message: message}) do
+    "invalid configuration given to SQSBroadway.prepare_for_start/2, " <> message
+  end
+
+  defp format_error(%ValidationError{keys_path: keys_path, message: message}) do
+    "invalid configuration given to SQSBroadway.prepare_for_start/2 for key #{inspect(keys_path)}, " <>
+      message
   end
 
   @impl true

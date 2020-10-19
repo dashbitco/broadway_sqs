@@ -22,7 +22,9 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     @behaviour Broadway.Acknowledger
 
     @impl true
-    def init(opts), do: {:ok, opts}
+    def init(opts) do
+      {:ok, opts}
+    end
 
     @impl true
     def receive_messages(amount, opts) do
@@ -50,6 +52,12 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
   defmodule Forwarder do
     use Broadway
 
+    def start_link(opts), do: GenServer.start_link(__MODULE__, opts)
+
+    def init(opts) do
+      {:ok, opts}
+    end
+
     def handle_message(_, message, %{test_pid: test_pid}) do
       send(test_pid, {:message_handled, message.data, message.metadata})
       message
@@ -60,14 +68,460 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     end
   end
 
-  test "raise an ArgumentError with proper message when client options are invalid" do
-    assert_raise(
-      ArgumentError,
-      "invalid options given to BroadwaySQS.ExAwsClient.init/1, expected :queue_url to be a non empty string, got: nil",
-      fn ->
-        BroadwaySQS.Producer.init(queue_url: nil)
-      end
-    )
+  defp prepare_for_start_module_opts(module_opts) do
+    {:ok, message_server} = MessageServer.start_link()
+    {:ok, pid} = start_broadway(message_server)
+
+    try do
+      BroadwaySQS.Producer.prepare_for_start(Forwarder,
+        producer: [
+          module: {BroadwaySQS.Producer, module_opts},
+          concurrency: 1
+        ]
+      )
+    after
+      stop_broadway(pid)
+    end
+  end
+
+  describe "prepare_for_start/2 validation" do
+    test "when the queue url is not present" do
+      message = """
+      invalid configuration given to SQSBroadway.prepare_for_start/2, \
+      required option :queue_url not found, received options: []\
+      """
+
+      assert_raise(ArgumentError, message, fn ->
+        prepare_for_start_module_opts([])
+      end)
+    end
+
+    test "when the queue url is nil" do
+      assert_raise(
+        ArgumentError,
+        ~r/expected :queue_url to be a non-empty string, got: nil/,
+        fn ->
+          prepare_for_start_module_opts(queue_url: nil)
+        end
+      )
+    end
+
+    test "when the queue url is an empty string" do
+      assert_raise(
+        ArgumentError,
+        ~r/expected :queue_url to be a non-empty string, got: \"\"/,
+        fn ->
+          prepare_for_start_module_opts(queue_url: "")
+        end
+      )
+    end
+
+    test "when the queue url is an atom" do
+      assert_raise(
+        ArgumentError,
+        ~r/expected :queue_url to be a non-empty string, got: :my_queue_url_atom/,
+        fn ->
+          prepare_for_start_module_opts(queue_url: :my_queue_url_atom)
+        end
+      )
+    end
+
+    test "when the queue url is a string" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue"
+               )
+
+      assert result_module_opts[:queue_url] == "https://sqs.amazonaws.com/0000000000/my_queue"
+    end
+
+    test ":attribute_names is optional without default value" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue"
+               )
+
+      refute Keyword.has_key?(result_module_opts, :attribute_names)
+    end
+
+    test "when :attribute_names is a list containing any of the supported attributes" do
+      all_attribute_names = [
+        :sender_id,
+        :sent_timestamp,
+        :approximate_receive_count,
+        :approximate_first_receive_timestamp,
+        :sequence_number,
+        :message_deduplication_id,
+        :message_group_id,
+        :aws_trace_header
+      ]
+
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+                 attribute_names: all_attribute_names
+               )
+
+      assert result_module_opts[:attribute_names] == all_attribute_names
+
+      bad_attribute_names = [:approximate_receive_count, :unsupported]
+
+      expected_message = ~r"""
+      expected :attribute_names to be a list with possible members \
+      \[:sender_id, :sent_timestamp, :approximate_receive_count, \
+      :approximate_first_receive_timestamp, :sequence_number, \
+      :message_deduplication_id, :message_group_id, :aws_trace_header\], \
+      got: \[:approximate_receive_count, :unsupported\]\
+      """
+
+      assert_raise(
+        ArgumentError,
+        expected_message,
+        fn ->
+          prepare_for_start_module_opts(
+            queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+            attribute_names: bad_attribute_names
+          )
+        end
+      )
+    end
+
+    test "when :attribute_names is :all" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+                 attribute_names: :all
+               )
+
+      assert result_module_opts[:attribute_names] == :all
+    end
+
+    test ":message_attribute_names is optional without default value" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue"
+               )
+
+      refute Keyword.has_key?(result_module_opts, :message_attribute_names)
+    end
+
+    test "when :message_attribute_names is a list of non empty strings" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+                 message_attribute_names: ["attr_1", "attr_2"]
+               )
+
+      assert result_module_opts[:message_attribute_names] == ["attr_1", "attr_2"]
+
+      bad_message_attribute_names = ["attr_1", :not_a_string]
+
+      assert_raise(
+        ArgumentError,
+        ~r/expected :queue_url to be a list with non-empty strings, got: \[:not_a_string\]/,
+        fn ->
+          prepare_for_start_module_opts(
+            queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+            message_attribute_names: bad_message_attribute_names
+          )
+        end
+      )
+    end
+
+    test "when :message_attribute_names is :all" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+                 message_attribute_names: :all
+               )
+
+      assert result_module_opts[:message_attribute_names] == :all
+    end
+
+    test ":wait_time_seconds is optional without default value" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue"
+               )
+
+      refute Keyword.has_key?(result_module_opts, :wait_time_seconds)
+    end
+
+    test ":wait_time_seconds should be a non negative integer" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+                 wait_time_seconds: 0
+               )
+
+      assert result_module_opts[:wait_time_seconds] == 0
+
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+                 wait_time_seconds: 10
+               )
+
+      assert result_module_opts[:wait_time_seconds] == 10
+
+      assert_raise(
+        ArgumentError,
+        ~r/expected :wait_time_seconds to be a non negative integer, got: -1/,
+        fn ->
+          prepare_for_start_module_opts(
+            queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+            wait_time_seconds: -1
+          )
+        end
+      )
+
+      assert_raise(
+        ArgumentError,
+        ~r/expected :wait_time_seconds to be a non negative integer, got: :an_atom/,
+        fn ->
+          prepare_for_start_module_opts(
+            queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+            wait_time_seconds: :an_atom
+          )
+        end
+      )
+    end
+
+    test ":max_number_of_messages is optional with default value 10" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue"
+               )
+
+      assert result_module_opts[:max_number_of_messages] == 10
+    end
+
+    test ":max_number_of_messages should be an integer between 1 and 10" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+                 max_number_of_messages: 1
+               )
+
+      assert result_module_opts[:max_number_of_messages] == 1
+
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+                 max_number_of_messages: 10
+               )
+
+      assert result_module_opts[:max_number_of_messages] == 10
+
+      assert_raise(
+        ArgumentError,
+        ~r/expected :max_number_of_messages to be an integer between 1 and 10, got: 0/,
+        fn ->
+          prepare_for_start_module_opts(
+            queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+            max_number_of_messages: 0
+          )
+        end
+      )
+
+      assert_raise(
+        ArgumentError,
+        ~r/expected :max_number_of_messages to be an integer between 1 and 10, got: 11/,
+        fn ->
+          prepare_for_start_module_opts(
+            queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+            max_number_of_messages: 11
+          )
+        end
+      )
+    end
+
+    test ":config is optional with default value []" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue"
+               )
+
+      assert result_module_opts[:config] == []
+    end
+
+    test ":config should be a keyword list" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+                 config: [scheme: "https://", region: "us-east-1"]
+               )
+
+      assert result_module_opts[:config] == [scheme: "https://", region: "us-east-1"]
+
+      assert_raise(
+        ArgumentError,
+        ~r/expected :config to be a keyword list, got: :an_atom/,
+        fn ->
+          prepare_for_start_module_opts(
+            queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+            config: :an_atom
+          )
+        end
+      )
+    end
+
+    test ":visibility_timeout is optional without default value" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue"
+               )
+
+      refute Keyword.has_key?(result_module_opts, :visibility_timeout)
+    end
+
+    test ":visibility_timeout should be a non negative integer" do
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+                 visibility_timeout: 0
+               )
+
+      assert result_module_opts[:visibility_timeout] == 0
+
+      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+              [
+                producer: [
+                  module: {BroadwaySQS.Producer, result_module_opts},
+                  concurrency: 1
+                ]
+              ]} =
+               prepare_for_start_module_opts(
+                 queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+                 visibility_timeout: 43200
+               )
+
+      assert result_module_opts[:visibility_timeout] == 43200
+
+      assert_raise(
+        ArgumentError,
+        ~r/expected :visibility_timeout to be an integer between 0 and 43200, got: -1/,
+        fn ->
+          prepare_for_start_module_opts(
+            queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+            visibility_timeout: -1
+          )
+        end
+      )
+
+      assert_raise(
+        ArgumentError,
+        ~r/expected :visibility_timeout to be an integer between 0 and 43200, got: 142857/,
+        fn ->
+          prepare_for_start_module_opts(
+            queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+            visibility_timeout: 142_857
+          )
+        end
+      )
+    end
   end
 
   test "receive messages when the queue has less than the demand" do
@@ -144,15 +598,16 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
   test "stop trying to receive new messages after start draining" do
     {:ok, message_server} = MessageServer.start_link()
-    {:ok, pid} = start_broadway(message_server)
+    broadway_name = new_unique_name()
+    {:ok, pid} = start_broadway(broadway_name, message_server)
 
-    [producer] = Broadway.producer_names(pid)
+    [producer] = Broadway.producer_names(broadway_name)
 
     assert_receive {:messages_received, 0}
 
     :sys.suspend(producer)
     flush_messages_received()
-    task = Task.async(fn -> Broadway.Producer.drain(producer) end)
+    task = Task.async(fn -> Broadway.Topology.ProducerStage.drain(producer) end)
     :sys.resume(producer)
     Task.await(task)
 
@@ -173,17 +628,27 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     stop_broadway(pid)
   end
 
-  defp start_broadway(message_server) do
-    Broadway.start_link(Forwarder,
-      name: new_unique_name(),
+  defp start_broadway(broadway_name, message_server) do
+    Broadway.start_link(
+      Forwarder,
+      build_broadway_opts(broadway_name,
+        sqs_client: FakeSQSClient,
+        queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
+        receive_interval: 0,
+        test_pid: self(),
+        message_server: message_server
+      )
+    )
+  end
+
+  defp start_broadway(message_server), do: start_broadway(new_unique_name(), message_server)
+
+  defp build_broadway_opts(broadway_name, producer_opts) do
+    [
+      name: broadway_name,
       context: %{test_pid: self()},
       producer: [
-        module:
-          {BroadwaySQS.Producer,
-           sqs_client: FakeSQSClient,
-           receive_interval: 0,
-           test_pid: self(),
-           message_server: message_server},
+        module: {BroadwaySQS.Producer, producer_opts},
         concurrency: 1
       ],
       processors: [
@@ -196,7 +661,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
           concurrency: 1
         ]
       ]
-    )
+    ]
   end
 
   defp new_unique_name() do

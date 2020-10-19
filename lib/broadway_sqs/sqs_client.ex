@@ -4,7 +4,6 @@ defmodule BroadwaySQS.SQSClient do
   This module defines callbacks to normalize options and receive message
   from a SQS queue. Modules that implement this behaviour should be passed
   as the `:sqs_client` option from `BroadwaySQS.Producer`.
-
   """
 
   alias Broadway.Message
