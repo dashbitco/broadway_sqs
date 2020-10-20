@@ -599,20 +599,16 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
   test "stop trying to receive new messages after start draining" do
     {:ok, message_server} = MessageServer.start_link()
     broadway_name = new_unique_name()
-    {:ok, pid} = start_broadway(broadway_name, message_server)
+    {:ok, pid} = start_broadway(broadway_name, message_server, receive_interval: 5_000)
 
     [producer] = Broadway.producer_names(broadway_name)
-
     assert_receive {:messages_received, 0}
 
-    :sys.suspend(producer)
-    flush_messages_received()
-    task = Task.async(fn -> Broadway.Topology.ProducerStage.drain(producer) end)
-    :sys.resume(producer)
-    Task.await(task)
+    # Drain and explicitly ask it to receive messages but it shouldn't work
+    Broadway.Topology.ProducerStage.drain(producer)
+    send(producer, :receive_messages)
 
     refute_receive {:messages_received, _}, 10
-
     stop_broadway(pid)
   end
 
@@ -628,10 +624,10 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     stop_broadway(pid)
   end
 
-  defp start_broadway(broadway_name, message_server) do
+  defp start_broadway(broadway_name \\ new_unique_name(), message_server, opts \\ []) do
     Broadway.start_link(
       Forwarder,
-      build_broadway_opts(broadway_name,
+      build_broadway_opts(broadway_name, opts,
         sqs_client: FakeSQSClient,
         queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
         receive_interval: 0,
@@ -641,14 +637,12 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     )
   end
 
-  defp start_broadway(message_server), do: start_broadway(new_unique_name(), message_server)
-
-  defp build_broadway_opts(broadway_name, producer_opts) do
+  defp build_broadway_opts(broadway_name, opts, producer_opts) do
     [
       name: broadway_name,
       context: %{test_pid: self()},
       producer: [
-        module: {BroadwaySQS.Producer, producer_opts},
+        module: {BroadwaySQS.Producer, Keyword.merge(producer_opts, opts)},
         concurrency: 1
       ],
       processors: [
@@ -674,14 +668,6 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
     receive do
       {:DOWN, ^ref, _, _, _} -> :ok
-    end
-  end
-
-  defp flush_messages_received() do
-    receive do
-      {:messages_received, 0} -> flush_messages_received()
-    after
-      0 -> :ok
     end
   end
 end
