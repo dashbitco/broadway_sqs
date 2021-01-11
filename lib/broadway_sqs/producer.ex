@@ -165,7 +165,7 @@ defmodule BroadwaySQS.Producer do
         raise ArgumentError, format_error(error)
 
       {:ok, opts} ->
-        ack_ref = broadway_opts[:broadway][:name]
+        ack_ref = broadway_opts[:name]
 
         :persistent_term.put(ack_ref, %{
           queue_url: opts[:queue_url],
