@@ -82,13 +82,13 @@ defmodule BroadwaySQS.BroadwaySQS.IntegrationTest do
     end
 
     def count_for(request_name) do
-      if Process.alive?(Process.whereis(__MODULE__)) do
+      if Process.whereis(__MODULE__) do
         Agent.get(__MODULE__, & &1[request_name])
       end
     end
 
     def increment_for(request_name) do
-      if Process.alive?(Process.whereis(__MODULE__)) do
+      if Process.whereis(__MODULE__) do
         Agent.update(__MODULE__, &Map.put(&1, request_name, &1[request_name] + 1))
       end
     end
