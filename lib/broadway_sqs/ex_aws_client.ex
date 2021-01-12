@@ -17,6 +17,7 @@ defmodule BroadwaySQS.ExAwsClient do
   @impl true
   def init(opts) do
     opts_map = opts |> Enum.into(%{ack_ref: opts[:broadway][:name]})
+
     {:ok, opts_map}
   end
 

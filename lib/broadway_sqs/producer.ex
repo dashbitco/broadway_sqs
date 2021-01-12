@@ -134,12 +134,16 @@ defmodule BroadwaySQS.Producer do
   def init(opts) do
     receive_interval = opts[:receive_interval] || @default_receive_interval
 
+    sqs_client = opts[:sqs_client]
+
+    {:ok, client_opts} = sqs_client.init(opts)
+
     {:producer,
      %{
        demand: 0,
        receive_timer: nil,
        receive_interval: receive_interval,
-       sqs_client: {opts[:sqs_client], opts}
+       sqs_client: {sqs_client, client_opts}
      }}
   end
 
@@ -161,7 +165,7 @@ defmodule BroadwaySQS.Producer do
         raise ArgumentError, format_error(error)
 
       {:ok, opts} ->
-        ack_ref = broadway_opts[:broadway][:name]
+        ack_ref = broadway_opts[:name]
 
         :persistent_term.put(ack_ref, %{
           queue_url: opts[:queue_url],
@@ -234,6 +238,7 @@ defmodule BroadwaySQS.Producer do
 
   defp receive_messages_from_sqs(state, total_demand) do
     %{sqs_client: {client, opts}} = state
+
     client.receive_messages(total_demand, opts)
   end
 

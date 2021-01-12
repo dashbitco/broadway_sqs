@@ -29,8 +29,9 @@ defmodule BroadwaySqs.MixProject do
       {:broadway, "~> 0.6.2"},
       {:ex_aws_sqs, "~> 3.2.1 or ~> 3.3"},
       {:nimble_options, "~> 0.3.0"},
-      {:hackney, "~> 1.9", only: [:dev]},
+      {:hackney, "~> 1.9", only: [:dev, :test]},
       {:saxy, "~> 1.1"},
+      {:bypass, "~> 2.1.0", only: :test},
       {:ex_doc, ">= 0.19.0", only: :docs}
     ]
   end
