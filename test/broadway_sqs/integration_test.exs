@@ -107,6 +107,8 @@ defmodule BroadwaySQS.BroadwaySQS.IntegrationTest do
   test "consume messages from SQS and ack it", %{bypass: bypass} do
     {:ok, _} = RequestConter.start_link(%{receive_message: 0, delete_message_batch: 0})
 
+    us = self()
+
     Bypass.expect(bypass, fn conn ->
       {:ok, body, conn} = Plug.Conn.read_body(conn)
 
@@ -122,6 +124,7 @@ defmodule BroadwaySQS.BroadwaySQS.IntegrationTest do
 
           "Action=DeleteMessageBatch" <> _rest ->
             RequestConter.increment_for(:delete_message_batch)
+            send(us, :messages_deleted)
             @delete_message_response
         end
 
@@ -137,8 +140,9 @@ defmodule BroadwaySQS.BroadwaySQS.IntegrationTest do
 
     assert_receive {:batch_handled, _messages}
 
-    # This "sleep" is important to give time to ack to happen.
-    Process.sleep(100)
+    assert_receive :messages_deleted
+    assert_receive :messages_deleted
+    assert_receive :messages_deleted
 
     assert RequestConter.count_for(:receive_message) == 6
     assert RequestConter.count_for(:delete_message_batch) == 3
