@@ -26,8 +26,12 @@ jobs:
           - elixir: 1.10.4
             otp: 21.3.8.16
           - elixir: 1.10.4
-            otp: 23.0.3
+            otp: 23.2.1
             check_formatted: true
+          - elixir: 1.11.3
+            otp: 23.2.1
+            check_formatted: true
+            warnings_as_errors: true
     steps:
       - uses: actions/checkout@v2.3.2
       - uses: actions/setup-elixir@v1.5.0
@@ -43,4 +47,28 @@ jobs:
           mix deps.get --only test
       - run: mix compile --warnings-as-errors
         if: matrix.warnings_as_errors
+      - run: mix test
+  example_app_test:
+    name: example app test (Elixir 1.11.3 | Erlang/OTP 23.2.1)
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    strategy:
+      fail-fast: false
+    defaults:
+      run:
+        working-directory: examples/sqs_example
+    steps:
+      - uses: actions/checkout@v2.3.2
+      - uses: actions/setup-elixir@v1.5.0
+        with:
+          otp-version: 23.2.1
+          elixir-version: 1.11.3
+      - run: mix format --check-formatted
+      - name: Install Dependencies
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get --only test
+      - run: mix compile --warnings_as_errors
       - run: mix test

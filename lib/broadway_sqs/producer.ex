@@ -16,7 +16,7 @@ defmodule BroadwaySQS.Producer do
   producers (regardless of the client implementation), all other options are specific to
   the `BroadwaySQS.ExAwsClient`, which is the default client.
 
-  #{NimbleOptions.Docs.generate(BroadwaySQS.Options.definition())}
+  #{NimbleOptions.docs(BroadwaySQS.Options.definition())}
 
   ## Acknowledgments
 
@@ -148,7 +148,7 @@ defmodule BroadwaySQS.Producer do
   end
 
   @impl true
-  def prepare_for_start(module, broadway_opts) do
+  def prepare_for_start(_module, broadway_opts) do
     {producer_module, client_opts} = broadway_opts[:producer][:module]
 
     if Keyword.has_key?(client_opts, :queue_name) do

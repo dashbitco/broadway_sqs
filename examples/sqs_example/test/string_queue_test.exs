@@ -3,15 +3,16 @@ defmodule StringQueueTest do
   doctest BroadwaySQSExample.String
 
   test "Acks work" do
-    ref = Broadway.test_messages(BroadwaySQSExample.String, ["1", "2", "3"])
-    assert_receive {:ack, ^ref, successful, failed}, 5000
+    ref = Broadway.test_batch(BroadwaySQSExample.String, ["1", "2", "3"])
+
+    assert_receive {:ack, ^ref, successful, failed}, 3_000
     assert length(successful) == 3
     assert length(failed) == 0
   end
 
   test "combines the same string twice" do
-    ref = Broadway.test_messages(BroadwaySQSExample.String, ["1", "2", "3"])
-    assert_receive {:ack, ^ref, successful, failed}, 5000
+    ref = Broadway.test_batch(BroadwaySQSExample.String, ["1", "2", "3"])
+    assert_receive {:ack, ^ref, successful, failed}, 3_000
     assert length(successful) == 3
     assert length(failed) == 0
 
