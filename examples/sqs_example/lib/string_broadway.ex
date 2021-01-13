@@ -10,8 +10,6 @@ defmodule BroadwaySQSExample.String do
                                )
 
   def start_link(_opts) do
-    IO.puts("starting...")
-
     Broadway.start_link(__MODULE__,
       name: __MODULE__,
       producer: [
