@@ -149,7 +149,7 @@ defmodule BroadwaySQS.Producer do
 
   @impl true
   def prepare_for_start(module, broadway_opts) do
-    {_, client_opts} = broadway_opts[:producer][:module]
+    {producer_module, client_opts} = broadway_opts[:producer][:module]
 
     if Keyword.has_key?(client_opts, :queue_name) do
       Logger.error(
@@ -174,12 +174,10 @@ defmodule BroadwaySQS.Producer do
           on_failure: opts[:on_failure]
         })
 
-        {producer_module, _broadway_module_opts} = broadway_opts[:producer][:module]
-
         broadway_opts_with_defaults =
           put_in(broadway_opts, [:producer, :module], {producer_module, opts})
 
-        {[module], broadway_opts_with_defaults}
+        {[], broadway_opts_with_defaults}
     end
   end
 

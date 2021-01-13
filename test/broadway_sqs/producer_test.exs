@@ -127,7 +127,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     end
 
     test "when the queue url is a string" do
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -142,7 +142,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     end
 
     test ":attribute_names is optional without default value" do
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -168,7 +168,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
         :aws_trace_header
       ]
 
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -205,7 +205,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     end
 
     test "when :attribute_names is :all" do
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -221,7 +221,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     end
 
     test ":message_attribute_names is optional without default value" do
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -236,7 +236,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     end
 
     test "when :message_attribute_names is a list of non empty strings" do
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -265,7 +265,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     end
 
     test "when :message_attribute_names is :all" do
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -281,7 +281,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     end
 
     test ":wait_time_seconds is optional without default value" do
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -296,7 +296,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     end
 
     test ":wait_time_seconds should be a non negative integer" do
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -310,7 +310,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
       assert result_module_opts[:wait_time_seconds] == 0
 
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -348,7 +348,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     end
 
     test ":max_number_of_messages is optional with default value 10" do
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -363,7 +363,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     end
 
     test ":max_number_of_messages should be an integer between 1 and 10" do
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -377,7 +377,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
       assert result_module_opts[:max_number_of_messages] == 1
 
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -415,7 +415,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     end
 
     test ":config is optional with default value []" do
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -430,7 +430,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     end
 
     test ":config should be a keyword list" do
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -457,7 +457,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     end
 
     test ":visibility_timeout is optional without default value" do
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -472,7 +472,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     end
 
     test ":visibility_timeout should be a non negative integer" do
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
@@ -486,7 +486,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
       assert result_module_opts[:visibility_timeout] == 0
 
-      assert {[BroadwaySQS.BroadwaySQS.ProducerTest.Forwarder],
+      assert {[],
               [
                 producer: [
                   module: {BroadwaySQS.Producer, result_module_opts},
