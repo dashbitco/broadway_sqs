@@ -10,23 +10,24 @@ defmodule BroadwaySQSExample.String do
                                )
 
   def start_link(_opts) do
+    IO.puts("starting...")
+
     Broadway.start_link(__MODULE__,
       name: __MODULE__,
-      producers: [
-        default: [
-          module:
-            {BroadwaySQS.Producer,
-             sqs_client: @broadway_sqs_implementation,
-             queue_url: Application.get_env(:broadway_sqs_example, :string_queue),
-             config: [
-               # access_key_id: "YOUR_AWS_ACCESS_KEY_ID",
-               # secret_access_key: "YOUR_AWS_SECRET_ACCESS_KEY"
-               region: "us-east-2"
-             ]}
-        ]
+      producer: [
+        module:
+          {BroadwaySQS.Producer,
+           sqs_client: @broadway_sqs_implementation,
+           queue_url: Application.get_env(:broadway_sqs_example, :string_queue),
+           config: [
+             # access_key_id: "YOUR_AWS_ACCESS_KEY_ID",
+             # secret_access_key: "YOUR_AWS_SECRET_ACCESS_KEY"
+             region: "us-east-2"
+           ]},
+        concurrency: 1
       ],
       processors: [
-        default: []
+        default: [concurrency: 1]
       ],
       batchers: [
         default: [

@@ -12,18 +12,16 @@ defmodule BroadwaySQSExample.IntSquared do
   def start_link(_opts) do
     Broadway.start_link(__MODULE__,
       name: __MODULE__,
-      producers: [
-        default: [
-          module:
-            {BroadwaySQS.Producer,
-             sqs_client: @broadway_sqs_implementation,
-             queue_url: Application.get_env(:broadway_sqs_example, :int_queue),
-             config: [
-               # access_key_id: "YOUR_AWS_ACCESS_KEY_ID",
-               # secret_access_key: "YOUR_AWS_SECRET_ACCESS_KEY"
-               region: "us-east-2"
-             ]}
-        ]
+      producer: [
+        module:
+          {BroadwaySQS.Producer,
+           sqs_client: @broadway_sqs_implementation,
+           queue_url: Application.get_env(:broadway_sqs_example, :int_queue),
+           config: [
+             # access_key_id: "YOUR_AWS_ACCESS_KEY_ID",
+             # secret_access_key: "YOUR_AWS_SECRET_ACCESS_KEY"
+             region: "us-east-2"
+           ]}
       ],
       processors: [
         default: []

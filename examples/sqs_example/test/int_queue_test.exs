@@ -3,14 +3,14 @@ defmodule IntQueueTest do
   doctest BroadwaySQSExample.IntSquared
 
   test "Acks work" do
-    ref = Broadway.test_messages(BroadwaySQSExample.IntSquared, ["1", "2", "3"])
+    ref = Broadway.test_message(BroadwaySQSExample.IntSquared, ["1", "2", "3"])
     assert_receive {:ack, ^ref, successful, failed}, 5000
     assert length(successful) == 3
     assert length(failed) == 0
   end
 
   test "squares numbers" do
-    ref = Broadway.test_messages(BroadwaySQSExample.IntSquared, ["1", "2", "3"])
+    ref = Broadway.test_message(BroadwaySQSExample.IntSquared, ["1", "2", "3"])
     assert_receive {:ack, ^ref, successful, failed}, 5000
     assert length(successful) == 3
     assert length(failed) == 0
