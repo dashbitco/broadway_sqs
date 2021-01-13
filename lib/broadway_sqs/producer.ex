@@ -16,7 +16,7 @@ defmodule BroadwaySQS.Producer do
   producers (regardless of the client implementation), all other options are specific to
   the `BroadwaySQS.ExAwsClient`, which is the default client.
 
-  #{NimbleOptions.Docs.generate(BroadwaySQS.Options.definition())}
+  #{NimbleOptions.docs(BroadwaySQS.Options.definition())}
 
   ## Acknowledgments
 
