@@ -193,10 +193,12 @@ defmodule BroadwaySQS.ExAwsClientTest do
           end,
           nil
         )
+
       {:ok, opts} = ExAwsClient.init(base_opts)
       ExAwsClient.receive_messages(10, opts)
 
-      assert_receive {:telemetry_event, [:broadway_sqs, :producer, :start], %{time: _}, %{demand: 10}}
+      assert_receive {:telemetry_event, [:broadway_sqs, :producer, :start], %{time: _},
+                      %{demand: 10}}
     end
 
     test "emits a Telemetry stop event with messages", %{opts: base_opts} do
@@ -211,10 +213,12 @@ defmodule BroadwaySQS.ExAwsClientTest do
           end,
           nil
         )
+
       {:ok, opts} = ExAwsClient.init(base_opts)
       messages = ExAwsClient.receive_messages(10, opts)
 
-      assert_receive {:telemetry_event, [:broadway_sqs, :producer, :stop], %{time: _, duration: _}, %{messages: ^messages, demand: 10}}
+      assert_receive {:telemetry_event, [:broadway_sqs, :producer, :stop],
+                      %{time: _, duration: _}, %{messages: ^messages, demand: 10}}
     end
   end
 
