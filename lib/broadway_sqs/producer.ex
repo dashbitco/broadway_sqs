@@ -118,6 +118,31 @@ defmodule BroadwaySQS.Producer do
 
   For more information on the `:attributes_names` and `:message_attributes_names`
   options, see ["AttributeName.N" and "MessageAttributeName.N" on the ReceiveMessage documentation](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html)
+
+  ## Telemetry
+
+  This library exposes the following Telemetry events:
+
+    * `[:broadway_sqs, :producer, :start]` - Dispatched before receiving
+      messages from SQS (`c:receive_messages/2`)
+
+      * measurement: `%{time: System.monotonic_time}`
+      * metadata: `%{name: atom, demand: integer}`
+
+    * `[:broadway_sqs, :producer, :stop]` -  Dispatched after messages have
+      been received from SQS and "wrapped".
+
+      * measurement: `%{time: System.monotonic_time, duration: native_time}`
+
+      * metadata:
+
+        ```
+        %{
+          name: atom,
+          messages: [Broadway.Message.t],
+          demand: integer
+        }
+        ```
   """
 
   use GenStage
