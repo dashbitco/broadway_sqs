@@ -23,12 +23,19 @@ defmodule BroadwaySQS.ExAwsClient do
 
   @impl true
   def receive_messages(demand, opts) do
+    start_time = System.monotonic_time()
+    emit_start_event(opts[:ack_ref], start_time, demand)
     receive_messages_opts = build_receive_messages_opts(opts, demand)
 
-    opts.queue_url
-    |> ExAws.SQS.receive_message(receive_messages_opts)
-    |> ExAws.request(opts.config)
-    |> wrap_received_messages(opts.ack_ref)
+    messages =
+      opts.queue_url
+      |> ExAws.SQS.receive_message(receive_messages_opts)
+      |> ExAws.request(opts.config)
+      |> wrap_received_messages(opts.ack_ref)
+
+    emit_stop_event(opts.ack_ref, start_time, demand, messages)
+
+    messages
   end
 
   @impl Acknowledger
@@ -96,5 +103,19 @@ defmodule BroadwaySQS.ExAwsClient do
   defp extract_message_receipt(message) do
     {_, _, %{receipt: receipt}} = message.acknowledger
     receipt
+  end
+
+  defp emit_start_event(name, start_time, demand) do
+    metadata = %{name: name, demand: demand}
+    measurements = %{time: start_time}
+    :telemetry.execute([:broadway_sqs, :producer, :start], measurements, metadata)
+  end
+
+  defp emit_stop_event(name, start_time, demand, messages) do
+    metadata = %{name: name, messages: messages, demand: demand}
+
+    stop_time = System.monotonic_time()
+    measurements = %{time: stop_time, duration: stop_time - start_time}
+    :telemetry.execute([:broadway_sqs, :producer, :stop], measurements, metadata)
   end
 end

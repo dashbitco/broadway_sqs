@@ -180,6 +180,42 @@ defmodule BroadwaySQS.ExAwsClientTest do
       assert_received {:http_request_called, %{url: url}}
       assert url == "http://localhost:9324/"
     end
+
+    test "emits a Telemetry start event with demand", %{opts: base_opts} do
+      self = self()
+
+      :ok =
+        :telemetry.attach(
+          "start_test",
+          [:broadway_sqs, :producer, :start],
+          fn name, measurements, metadata, _ ->
+            send(self, {:telemetry_event, name, measurements, metadata})
+          end,
+          nil
+        )
+      {:ok, opts} = ExAwsClient.init(base_opts)
+      ExAwsClient.receive_messages(10, opts)
+
+      assert_receive {:telemetry_event, [:broadway_sqs, :producer, :start], %{time: _}, %{demand: 10}}
+    end
+
+    test "emits a Telemetry stop event with messages", %{opts: base_opts} do
+      self = self()
+
+      :ok =
+        :telemetry.attach(
+          "stop_test",
+          [:broadway_sqs, :producer, :stop],
+          fn name, measurements, metadata, _ ->
+            send(self, {:telemetry_event, name, measurements, metadata})
+          end,
+          nil
+        )
+      {:ok, opts} = ExAwsClient.init(base_opts)
+      messages = ExAwsClient.receive_messages(10, opts)
+
+      assert_receive {:telemetry_event, [:broadway_sqs, :producer, :stop], %{time: _, duration: _}, %{messages: ^messages, demand: 10}}
+    end
   end
 
   describe "ack/3" do
