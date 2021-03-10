@@ -624,6 +624,50 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     stop_broadway(pid)
   end
 
+  test "emit a Telemetry start event with demand" do
+    self = self()
+    {:ok, message_server} = MessageServer.start_link()
+    {:ok, pid} = start_broadway(message_server)
+
+    :ok =
+      :telemetry.attach(
+        "start_test",
+        [:broadway_sqs, :producer, :start],
+        fn name, measurements, metadata, _ ->
+          send(self, {:telemetry_event, name, measurements, metadata})
+        end,
+        nil
+      )
+
+    MessageServer.push_messages(message_server, [2])
+
+    assert_receive {:telemetry_event, [:broadway_sqs, :producer, :start], %{system_time: _},
+                    %{demand: 10}}
+
+    stop_broadway(pid)
+  end
+
+  test "emit a Telemetry stop event with messages" do
+    self = self()
+    {:ok, message_server} = MessageServer.start_link()
+    {:ok, pid} = start_broadway(message_server)
+
+    :ok =
+      :telemetry.attach(
+        "stop_test",
+        [:broadway_sqs, :producer, :stop],
+        fn name, measurements, metadata, _ ->
+          send(self, {:telemetry_event, name, measurements, metadata})
+        end,
+        nil
+      )
+
+    assert_receive {:telemetry_event, [:broadway_sqs, :producer, :stop], %{duration: _},
+                    %{messages: _, demand: 10}}
+
+    stop_broadway(pid)
+  end
+
   defp start_broadway(broadway_name \\ new_unique_name(), message_server, opts \\ []) do
     Broadway.start_link(
       Forwarder,

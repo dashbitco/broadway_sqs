@@ -132,8 +132,7 @@ defmodule BroadwaySQS.Producer do
     * `[:broadway_sqs, :producer, :stop]` -  Dispatched after messages have
       been received from SQS and "wrapped".
 
-      * measurement: `%{time: System.monotonic_time, duration: native_time}`
-
+      * measurement: `%{duration: native_time}`
       * metadata:
 
         ```
@@ -261,8 +260,16 @@ defmodule BroadwaySQS.Producer do
 
   defp receive_messages_from_sqs(state, total_demand) do
     %{sqs_client: {client, opts}} = state
+    metadata = %{name: get_in(opts, [:ack_ref]), demand: total_demand}
 
-    client.receive_messages(total_demand, opts)
+    :telemetry.span(
+      [:broadway_sqs, :producer],
+      metadata,
+      fn ->
+        messages = client.receive_messages(total_demand, opts)
+        {messages, Map.merge(metadata, %{messages: messages})}
+      end
+    )
   end
 
   defp schedule_receive_messages(interval) do
