@@ -23,28 +23,24 @@ defmodule BroadwaySQS.Options do
         A module that implements the `BroadwaySQS.SQSClient`
         behaviour. This module is responsible for fetching and acknowledging the
         messages. Pay attention that all options passed to the producer will be forwarded
-        to the client. Default is `BroadwaySQS.ExAwsClient`.
-        """
+        to the client.
+        """,
+        default: BroadwaySQS.ExAwsClient
       ],
       receive_interval: [
         type: :non_neg_integer,
         doc: """
         The duration (in milliseconds) for which the producer
-        waits before making a request for more messages. Default is 5000.
-        """
-      ],
-      test_pid: [
-        type: :pid
-      ],
-      message_server: [
-        type: :pid
+        waits before making a request for more messages.
+        """,
+        default: 5000
       ],
       on_success: [
         type: :atom,
         default: :ack,
         doc: """
         configures the acking behaviour for successful messages. See the
-        "Acknowledgments" section below for all the possible values. Defaults to `:ack`.
+        "Acknowledgments" section below for all the possible values.
         """
       ],
       on_failure: [
@@ -52,7 +48,7 @@ defmodule BroadwaySQS.Options do
         default: :noop,
         doc: """
         configures the acking behaviour for failed messages. See the
-        "Acknowledgments" section below for all the possible values. Defaults to `:noop`.
+        "Acknowledgments" section below for all the possible values.
         """
       ],
       config: [
@@ -76,7 +72,7 @@ defmodule BroadwaySQS.Options do
         doc: """
         The maximum number of messages to be fetched
         per request. This value must be between `1` and `10`, which is the maximum number
-        allowed by AWS. Default is `10`.
+        allowed by AWS.
         """
       ],
       wait_time_seconds: [
@@ -128,14 +124,14 @@ defmodule BroadwaySQS.Options do
         attached to the response and appended to the `metadata` field of the message.
         Supported values are:
 
-        * `:sender_id`
-        * `:sent_timestamp`
-        * `:approximate_receive_count`
-        * `:approximate_first_receive_timestamp`
-        * `:sequence_number`
-        * `:message_deduplication_id`
-        * `:message_group_id`
-        * `:aws_trace_header`
+          * `:sender_id`
+          * `:sent_timestamp`
+          * `:approximate_receive_count`
+          * `:approximate_first_receive_timestamp`
+          * `:sequence_number`
+          * `:message_deduplication_id`
+          * `:message_group_id`
+          * `:aws_trace_header`
 
         You can also use `:all` instead of the list if you want to retrieve all attributes
         """
@@ -153,6 +149,14 @@ defmodule BroadwaySQS.Options do
         message. Wildcards `[".*"]` and prefixes `["bar.*"]` will retrieve multiple fields.
         You can also use `:all` instead of the list if you want to retrieve all attributes.
         """
+      ],
+      test_pid: [
+        type: :pid,
+        doc: false
+      ],
+      message_server: [
+        type: :pid,
+        doc: false
       ]
     ]
   end

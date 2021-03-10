@@ -128,14 +128,10 @@ defmodule BroadwaySQS.Producer do
 
   @behaviour Producer
 
-  @default_receive_interval 5000
-
   @impl true
   def init(opts) do
-    receive_interval = opts[:receive_interval] || @default_receive_interval
-
+    receive_interval = opts[:receive_interval]
     sqs_client = opts[:sqs_client]
-
     {:ok, client_opts} = sqs_client.init(opts)
 
     {:producer,
