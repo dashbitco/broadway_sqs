@@ -632,7 +632,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     :ok =
       :telemetry.attach(
         "start_test",
-        [:broadway_sqs, :producer, :start],
+        [:broadway_sqs, :receive_messages, :start],
         fn name, measurements, metadata, _ ->
           send(self, {:telemetry_event, name, measurements, metadata})
         end,
@@ -641,7 +641,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
     MessageServer.push_messages(message_server, [2])
 
-    assert_receive {:telemetry_event, [:broadway_sqs, :producer, :start], %{system_time: _},
+    assert_receive {:telemetry_event, [:broadway_sqs, :receive_messages, :start], %{system_time: _},
                     %{demand: 10}}
 
     stop_broadway(pid)
@@ -655,14 +655,14 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     :ok =
       :telemetry.attach(
         "stop_test",
-        [:broadway_sqs, :producer, :stop],
+        [:broadway_sqs, :receive_messages, :stop],
         fn name, measurements, metadata, _ ->
           send(self, {:telemetry_event, name, measurements, metadata})
         end,
         nil
       )
 
-    assert_receive {:telemetry_event, [:broadway_sqs, :producer, :stop], %{duration: _},
+    assert_receive {:telemetry_event, [:broadway_sqs, :receive_messages, :stop], %{duration: _},
                     %{messages: _, demand: 10}}
 
     stop_broadway(pid)

@@ -123,13 +123,13 @@ defmodule BroadwaySQS.Producer do
 
   This library exposes the following Telemetry events:
 
-    * `[:broadway_sqs, :producer, :start]` - Dispatched before receiving
+    * `[:broadway_sqs, :receive_messages, :start]` - Dispatched before receiving
       messages from SQS (`c:receive_messages/2`)
 
       * measurement: `%{time: System.monotonic_time}`
       * metadata: `%{name: atom, demand: integer}`
 
-    * `[:broadway_sqs, :producer, :stop]` -  Dispatched after messages have
+    * `[:broadway_sqs, :receive_messages, :stop]` -  Dispatched after messages have
       been received from SQS and "wrapped".
 
       * measurement: `%{duration: native_time}`
@@ -263,11 +263,11 @@ defmodule BroadwaySQS.Producer do
     metadata = %{name: get_in(opts, [:ack_ref]), demand: total_demand}
 
     :telemetry.span(
-      [:broadway_sqs, :producer],
+      [:broadway_sqs, :receive_messages],
       metadata,
       fn ->
         messages = client.receive_messages(total_demand, opts)
-        {messages, Map.merge(metadata, %{messages: messages})}
+        {messages, Map.put(metadata, :messages, messages)}
       end
     )
   end
