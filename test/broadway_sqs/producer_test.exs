@@ -641,8 +641,8 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
     MessageServer.push_messages(message_server, [2])
 
-    assert_receive {:telemetry_event, [:broadway_sqs, :receive_messages, :start], %{system_time: _},
-                    %{demand: 10}}
+    assert_receive {:telemetry_event, [:broadway_sqs, :receive_messages, :start],
+                    %{system_time: _}, %{demand: 10}}
 
     stop_broadway(pid)
   end
