@@ -118,6 +118,30 @@ defmodule BroadwaySQS.Producer do
 
   For more information on the `:attributes_names` and `:message_attributes_names`
   options, see ["AttributeName.N" and "MessageAttributeName.N" on the ReceiveMessage documentation](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html)
+
+  ## Telemetry
+
+  This library exposes the following Telemetry events:
+
+    * `[:broadway_sqs, :receive_messages, :start]` - Dispatched before receiving
+      messages from SQS (`c:receive_messages/2`)
+
+      * measurement: `%{time: System.monotonic_time}`
+      * metadata: `%{name: atom, demand: integer}`
+
+    * `[:broadway_sqs, :receive_messages, :stop]` -  Dispatched after messages have
+      been received from SQS and "wrapped".
+
+      * measurement: `%{duration: native_time}`
+      * metadata:
+
+        ```
+        %{
+          name: atom,
+          messages: [Broadway.Message.t],
+          demand: integer
+        }
+        ```
   """
 
   use GenStage
@@ -232,8 +256,16 @@ defmodule BroadwaySQS.Producer do
 
   defp receive_messages_from_sqs(state, total_demand) do
     %{sqs_client: {client, opts}} = state
+    metadata = %{name: get_in(opts, [:ack_ref]), demand: total_demand}
 
-    client.receive_messages(total_demand, opts)
+    :telemetry.span(
+      [:broadway_sqs, :receive_messages],
+      metadata,
+      fn ->
+        messages = client.receive_messages(total_demand, opts)
+        {messages, Map.put(metadata, :messages, messages)}
+      end
+    )
   end
 
   defp schedule_receive_messages(interval) do
