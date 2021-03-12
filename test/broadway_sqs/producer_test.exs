@@ -624,7 +624,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     stop_broadway(pid)
   end
 
-  test "emit a Telemetry start event with demand" do
+  test "emit a telemetry start event with demand" do
     self = self()
     {:ok, message_server} = MessageServer.start_link()
     {:ok, pid} = start_broadway(message_server)
@@ -647,7 +647,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     stop_broadway(pid)
   end
 
-  test "emit a Telemetry stop event with messages" do
+  test "emit a telemetry stop event with messages" do
     self = self()
     {:ok, message_server} = MessageServer.start_link()
     {:ok, pid} = start_broadway(message_server)
