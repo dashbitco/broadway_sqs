@@ -76,11 +76,17 @@ defmodule BroadwaySQS.Options do
         """
       ],
       wait_time_seconds: [
-        type: :non_neg_integer,
+        type: {
+          :custom,
+          __MODULE__,
+          :type_bounded_integer,
+          [[{:name, :wait_time_seconds}, {:min, 0}, {:max, 20}]]
+        },
         doc: """
         The duration (in seconds) for which the call waits
-        for a message to arrive in the queue before returning. For more information see
-         ["WaitTimeSeconds" on the Amazon SQS documentation](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html).
+        for a message to arrive in the queue before returning. This value must be
+        between `0` and `20`, which is the maximum number allowed by AWS. For more
+        information see ["WaitTimeSeconds" on the Amazon SQS documentation](https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html).
         """
       ],
       visibility_timeout: [
