@@ -326,7 +326,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
       assert_raise(
         ArgumentError,
-        ~r/expected :wait_time_seconds to be a non negative integer, got: -1/,
+        ~r/expected :wait_time_seconds to be an integer between 0 and 20, got: -1/,
         fn ->
           prepare_for_start_module_opts(
             queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
@@ -337,7 +337,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
       assert_raise(
         ArgumentError,
-        ~r/expected :wait_time_seconds to be a non negative integer, got: :an_atom/,
+        ~r/expected :wait_time_seconds to be an integer between 0 and 20, got: :an_atom/,
         fn ->
           prepare_for_start_module_opts(
             queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
