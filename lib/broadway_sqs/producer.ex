@@ -129,7 +129,7 @@ defmodule BroadwaySQS.Producer do
       * measurement: `%{time: System.monotonic_time}`
       * metadata: `%{name: atom, demand: integer}`
 
-    * `[:broadway_sqs, :receive_messages, :stop]` -  Dispatched after messages have
+    * `[:broadway_sqs, :receive_messages, :stop]` - Dispatched after messages have
       been received from SQS and "wrapped".
 
       * measurement: `%{duration: native_time}`
@@ -142,6 +142,23 @@ defmodule BroadwaySQS.Producer do
           demand: integer
         }
         ```
+
+    * `[:broadway_sqs, :receive_messages, :exception]` - Dispatched after a failure
+      while receiving messages from SQS.
+
+      * measurement: `%{duration: native_time}`
+      * metadata:
+
+        ```
+        %{
+          name: atom,
+          demand: integer,
+          kind: kind,
+          reason: reason,
+          stacktrace: stacktrace
+        }
+        ```
+
   """
 
   use GenStage

@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.7.0 (2021-08-30)
+
+  * Add the following telemetry events:
+    * `[:broadway_sqs, :receive_messages, :start]`
+    * `[:broadway_sqs, :receive_messages, :stop]`
+    * `[:broadway_sqs, :receive_messages, :exception]`
+  * Require Broadway 1.0
+
 ## v0.6.1 (2020-04-14)
 
   * Depend on ex_aws_sqs with the faster Saxy support
