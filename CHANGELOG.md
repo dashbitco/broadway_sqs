@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.1.0 (2021-08-30)
+
+* Add selectable term storage
+* Persistent Term error
+
 ## v0.7.0 (2021-08-30)
 
   * Add the following telemetry events:

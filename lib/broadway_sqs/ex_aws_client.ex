@@ -7,6 +7,8 @@ defmodule BroadwaySQS.ExAwsClient do
   """
 
   alias Broadway.{Message, Acknowledger}
+  alias BroadwaySQS.Storage.{ETS, PersistentTerm}
+  require BroadwaySQS.Validators
   require Logger
 
   @behaviour BroadwaySQS.SQSClient
@@ -16,8 +18,50 @@ defmodule BroadwaySQS.ExAwsClient do
 
   @impl true
   def init(opts) do
-    opts_map = opts |> Enum.into(%{ack_ref: opts[:broadway][:name]})
+    storage = Kernel.get_in(opts, [:storage]) || :ets
 
+    {_(ack_ref)} =
+      case storage do
+        :ets ->
+          with {:ok, queue_url} <- validate(opts, :queue_url, required: true),
+               {:ok, receive_messages_opts} <- validate_receive_messages_opts(opts),
+               {:ok, config} <- validate(opts, :config, default: []),
+               {:ok, on_success} <- validate(opts, :on_success, default: :ack),
+               {:ok, on_failure} <- validate(opts, :on_failure, default: :noop) do
+            ack_ref =
+              ETS.put(%{
+                queue_url: queue_url,
+                config: config,
+                on_success: on_success,
+                on_failure: on_failure
+              })
+
+            {:ok,
+             %{
+               queue_url: queue_url,
+               receive_messages_opts: receive_messages_opts,
+               config: config,
+               ack_ref: ack_ref
+             }}
+          end
+
+        :persistant ->
+          ack_ref =
+            PersistentTerm.put(%{
+              queue_url: opts[:broadway][:queue_url],
+              config: opts[:broadway][:config]
+            })
+
+          {:ok,
+           %{
+             queue_url: queue_url,
+             receive_messages_opts: receive_messages_opts,
+             config: config,
+             ack_ref: ack_ref
+           }}
+      end
+
+    opts_map = opts |> Enum.into(%{ack_ref: ack_ref})
     {:ok, opts_map}
   end
 
@@ -33,6 +77,7 @@ defmodule BroadwaySQS.ExAwsClient do
 
   @impl Acknowledger
   def ack(ack_ref, successful, failed) do
+    #  ack_options = BroadwaySQS.PersistentTermStorage.get(ack_ref)
     ack_options = :persistent_term.get(ack_ref)
 
     messages =
