@@ -29,7 +29,8 @@ Broadway.start_link(MyBroadway,
   name: MyBroadway,
   producer: [
     module: {BroadwaySQS.Producer,
-      queue_url: "https://sqs.amazonaws.com/1234567890/queue"
+      queue_url: "https://sqs.amazonaws.com/1234567890/queue",
+      storage: :ets
     }
   ]
 )
