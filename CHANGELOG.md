@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.1 (2022-03-25)
+
+  * Optionally on newer version of nimble_options
+   
 ## v0.7.0 (2021-08-30)
 
   * Add the following telemetry events:
