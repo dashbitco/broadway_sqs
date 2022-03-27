@@ -109,8 +109,6 @@ defmodule BroadwaySQS.BroadwaySQS.IntegrationTest do
   end
 
   test "consume messages from SQS and ack it", %{bypass: bypass} do
-    {:ok, _} = RequestConter.start_link(%{receive_message: 0, delete_message_batch: 0})
-
     us = self()
 
     Bypass.expect(bypass, fn conn ->
@@ -136,6 +134,8 @@ defmodule BroadwaySQS.BroadwaySQS.IntegrationTest do
       |> Conn.put_resp_header("content-type", "text/xml")
       |> Conn.resp(200, response)
     end)
+
+    {:ok, _} = RequestConter.start_link(%{receive_message: 0, delete_message_batch: 0})
 
     {:ok, _consumer} = start_fake_consumer(bypass)
 
