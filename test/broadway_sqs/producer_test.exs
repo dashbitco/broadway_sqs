@@ -1,7 +1,8 @@
 defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
 
   alias Broadway.Message
+  import ExUnit.CaptureLog
 
   defmodule MessageServer do
     def start_link() do
@@ -629,15 +630,17 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     {:ok, message_server} = MessageServer.start_link()
     {:ok, pid} = start_broadway(message_server)
 
-    :ok =
-      :telemetry.attach(
-        "start_test",
-        [:broadway_sqs, :receive_messages, :start],
-        fn name, measurements, metadata, _ ->
-          send(self, {:telemetry_event, name, measurements, metadata})
-        end,
-        nil
-      )
+    capture_log(fn ->
+      :ok =
+        :telemetry.attach(
+          "start_test",
+          [:broadway_sqs, :receive_messages, :start],
+          fn name, measurements, metadata, _ ->
+            send(self, {:telemetry_event, name, measurements, metadata})
+          end,
+          nil
+        )
+    end)
 
     MessageServer.push_messages(message_server, [2])
 
@@ -652,15 +655,17 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
     {:ok, message_server} = MessageServer.start_link()
     {:ok, pid} = start_broadway(message_server)
 
-    :ok =
-      :telemetry.attach(
-        "stop_test",
-        [:broadway_sqs, :receive_messages, :stop],
-        fn name, measurements, metadata, _ ->
-          send(self, {:telemetry_event, name, measurements, metadata})
-        end,
-        nil
-      )
+    capture_log(fn ->
+      :ok =
+        :telemetry.attach(
+          "stop_test",
+          [:broadway_sqs, :receive_messages, :stop],
+          fn name, measurements, metadata, _ ->
+            send(self, {:telemetry_event, name, measurements, metadata})
+          end,
+          nil
+        )
+    end)
 
     assert_receive {:telemetry_event, [:broadway_sqs, :receive_messages, :stop], %{duration: _},
                     %{messages: _, demand: 10}}
