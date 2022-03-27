@@ -1,8 +1,8 @@
 # Changelog
 
-## v0.7.1 (2022-03-25)
+## v0.7.1 (2022-03-27)
 
-  * Optionally on newer version of nimble_options
+  * Relax `nimble_options` dependency to accept `~> 0.4.0`
    
 ## v0.7.0 (2021-08-30)
 
