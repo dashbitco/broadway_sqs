@@ -273,7 +273,7 @@ defmodule BroadwaySQS.Producer do
 
   defp receive_messages_from_sqs(state, total_demand) do
     %{sqs_client: {client, opts}} = state
-    metadata = %{name: get_in(opts, [:ack_ref]), demand: total_demand}
+    metadata = %{name: opts[:ack_ref], demand: total_demand}
 
     :telemetry.span(
       [:broadway_sqs, :receive_messages],
