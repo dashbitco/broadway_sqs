@@ -127,19 +127,20 @@ defmodule BroadwaySQS.Options do
         },
         doc: """
         A list containing the names of attributes that should be
-        attached to the response and appended to the `metadata` field of the message.
-        Supported values are:
+        attached to the response and appended to the `metadata`
+        field of the message. You can also use `:all` instead of
+        a list if you want to retrieve all attributes. Supported
+        values are:
 
-          * `:sender_id`
-          * `:sent_timestamp`
-          * `:approximate_receive_count`
-          * `:approximate_first_receive_timestamp`
-          * `:sequence_number`
-          * `:message_deduplication_id`
-          * `:message_group_id`
-          * `:aws_trace_header`
+            * `:sender_id`
+            * `:sent_timestamp`
+            * `:approximate_receive_count`
+            * `:approximate_first_receive_timestamp`
+            * `:sequence_number`
+            * `:message_deduplication_id`
+            * `:message_group_id`
+            * `:aws_trace_header`
 
-        You can also use `:all` instead of the list if you want to retrieve all attributes
         """
       ],
       message_attribute_names: [
