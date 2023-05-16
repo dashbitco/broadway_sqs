@@ -139,7 +139,7 @@ defmodule BroadwaySQS.BroadwaySQS.IntegrationTest do
 
     {:ok, _consumer} = start_fake_consumer(bypass)
 
-    assert_receive {:message_handled, "hello world", %{receipt_handle: "receipt-handle-1"}}
+    assert_receive {:message_handled, "hello world", %{receipt_handle: "receipt-handle-1"}}, 1_000
     assert_receive {:message_handled, "how are you?", %{receipt_handle: "receipt-handle-2"}}
 
     assert_receive {:batch_handled, _messages}
