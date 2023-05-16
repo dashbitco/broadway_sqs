@@ -74,7 +74,7 @@ defmodule BroadwaySQS.BroadwaySQS.IntegrationTest do
   </DeleteMessageBatchResponse>
   """
 
-  defmodule RequestConter do
+  defmodule RequestCounter do
     use Agent
 
     def start_link(counters) do
@@ -117,15 +117,15 @@ defmodule BroadwaySQS.BroadwaySQS.IntegrationTest do
       response =
         case body do
           "Action=ReceiveMessage" <> _rest ->
-            if RequestConter.count_for(:receive_message) > 5 do
+            if RequestCounter.count_for(:receive_message) > 5 do
               @receive_message_empty_response
             else
-              RequestConter.increment_for(:receive_message)
+              RequestCounter.increment_for(:receive_message)
               @receive_message_response
             end
 
           "Action=DeleteMessageBatch" <> _rest ->
-            RequestConter.increment_for(:delete_message_batch)
+            RequestCounter.increment_for(:delete_message_batch)
             send(us, :messages_deleted)
             @delete_message_response
         end
@@ -135,11 +135,11 @@ defmodule BroadwaySQS.BroadwaySQS.IntegrationTest do
       |> Conn.resp(200, response)
     end)
 
-    {:ok, _} = RequestConter.start_link(%{receive_message: 0, delete_message_batch: 0})
+    {:ok, _} = RequestCounter.start_link(%{receive_message: 0, delete_message_batch: 0})
 
     {:ok, _consumer} = start_fake_consumer(bypass)
 
-    assert_receive {:message_handled, "hello world", %{receipt_handle: "receipt-handle-1"}}
+    assert_receive {:message_handled, "hello world", %{receipt_handle: "receipt-handle-1"}}, 1_000
     assert_receive {:message_handled, "how are you?", %{receipt_handle: "receipt-handle-2"}}
 
     assert_receive {:batch_handled, _messages}
@@ -148,8 +148,8 @@ defmodule BroadwaySQS.BroadwaySQS.IntegrationTest do
     assert_receive :messages_deleted
     assert_receive :messages_deleted
 
-    assert RequestConter.count_for(:receive_message) == 6
-    assert RequestConter.count_for(:delete_message_batch) == 3
+    assert RequestCounter.count_for(:receive_message) == 6
+    assert RequestCounter.count_for(:delete_message_batch) == 3
   end
 
   defp start_fake_consumer(bypass) do
