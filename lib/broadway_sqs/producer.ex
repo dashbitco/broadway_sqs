@@ -124,7 +124,7 @@ defmodule BroadwaySQS.Producer do
   This library exposes the following Telemetry events:
 
     * `[:broadway_sqs, :receive_messages, :start]` - Dispatched before receiving
-      messages from SQS (`c:receive_messages/2`)
+      messages from SQS (`c:BroadwaySQS.SQSClient.receive_messages/2`)
 
       * measurement: `%{time: System.monotonic_time}`
       * metadata: `%{name: atom, demand: integer}`
