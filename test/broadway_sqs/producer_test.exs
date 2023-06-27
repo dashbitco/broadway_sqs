@@ -87,10 +87,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
   describe "prepare_for_start/2 validation" do
     test "when the queue url is not present" do
-      message = """
-      invalid configuration given to SQSBroadway.prepare_for_start/2, \
-      required option :queue_url not found, received options: []\
-      """
+      message = "invalid configuration given to SQSBroadway.prepare_for_start/2, required :queue_url option not found, received options: []"
 
       assert_raise(ArgumentError, message, fn ->
         prepare_for_start_module_opts([])
@@ -447,7 +444,7 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
       assert_raise(
         ArgumentError,
-        ~r/expected :config to be a keyword list, got: :an_atom/,
+        ~r/invalid value for :config option: expected keyword list, got: :an_atom/,
         fn ->
           prepare_for_start_module_opts(
             queue_url: "https://sqs.amazonaws.com/0000000000/my_queue",
