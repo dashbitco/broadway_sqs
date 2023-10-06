@@ -28,7 +28,7 @@ defmodule BroadwaySQS.ExAwsClient do
     opts.queue_url
     |> ExAws.SQS.receive_message(receive_messages_opts)
     |> ExAws.request(opts.config)
-    |> wrap_received_messages(opts.ack_ref)
+    |> wrap_received_messages(opts)
   end
 
   @impl Acknowledger
@@ -62,7 +62,7 @@ defmodule BroadwaySQS.ExAwsClient do
     |> ExAws.request!(ack_options.config)
   end
 
-  defp wrap_received_messages({:ok, %{body: body}}, ack_ref) do
+  defp wrap_received_messages({:ok, %{body: body}}, %{ack_ref: ack_ref}) do
     Enum.map(body.messages, fn message ->
       metadata = Map.delete(message, :body)
       acknowledger = build_acknowledger(message, ack_ref)
@@ -70,8 +70,8 @@ defmodule BroadwaySQS.ExAwsClient do
     end)
   end
 
-  defp wrap_received_messages({:error, reason}, _) do
-    Logger.error("Unable to fetch events from AWS. Reason: #{inspect(reason)}")
+  defp wrap_received_messages({:error, reason}, %{queue_url: queue_url}) do
+    Logger.error("Unable to fetch events from AWS queue #{queue_url}. Reason: #{inspect(reason)}")
     []
   end
 
