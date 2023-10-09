@@ -87,7 +87,8 @@ defmodule BroadwaySQS.BroadwaySQS.ProducerTest do
 
   describe "prepare_for_start/2 validation" do
     test "when the queue url is not present" do
-      message = "invalid configuration given to SQSBroadway.prepare_for_start/2, required :queue_url option not found, received options: []"
+      message =
+        "invalid configuration given to SQSBroadway.prepare_for_start/2, required :queue_url option not found, received options: []"
 
       assert_raise(ArgumentError, message, fn ->
         prepare_for_start_module_opts([])

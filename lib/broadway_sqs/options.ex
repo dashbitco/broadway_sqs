@@ -220,9 +220,7 @@ defmodule BroadwaySQS.Options do
       {:ok, value}
     else
       {:error,
-       "expected :#{name} to be a list with possible members #{inspect(allowed_members)}, got: #{
-         inspect(value)
-       }"}
+       "expected :#{name} to be a list with possible members #{inspect(allowed_members)}, got: #{inspect(value)}"}
     end
   end
 end
