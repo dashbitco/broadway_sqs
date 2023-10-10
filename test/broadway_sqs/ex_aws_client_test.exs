@@ -137,7 +137,8 @@ defmodule BroadwaySQS.ExAwsClientTest do
 
       assert capture_log(fn ->
                assert ExAwsClient.receive_messages(10, opts) == []
-             end) =~ "[error] Unable to fetch events from AWS. Reason: \"Fake error\""
+             end) =~
+               "[error] Unable to fetch events from AWS queue my_queue. Reason: \"Fake error\""
     end
 
     test "send a SQS/ReceiveMessage request with default options", %{opts: base_opts} do
