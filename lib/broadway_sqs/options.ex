@@ -1,7 +1,5 @@
 defmodule BroadwaySQS.Options do
-  @moduledoc """
-  Broadway SQS option definitions and custom validators.
-  """
+  @moduledoc false
 
   def definition() do
     [
