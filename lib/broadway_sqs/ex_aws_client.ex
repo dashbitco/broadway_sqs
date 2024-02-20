@@ -1,7 +1,9 @@
 defmodule BroadwaySQS.ExAwsClient do
   @moduledoc """
   Default SQS client used by `BroadwaySQS.Producer` to communicate with AWS
-  SQS service. This client uses the `ExAws.SQS` library and implements the
+  SQS service.
+
+  This client uses the `ExAws.SQS` library and implements the
   `BroadwaySQS.SQSClient` and `Broadway.Acknowledger` behaviours which define
   callbacks for receiving and acknowledging messages.
   """
