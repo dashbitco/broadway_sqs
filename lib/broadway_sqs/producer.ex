@@ -178,6 +178,7 @@ defmodule BroadwaySQS.Producer do
     {:producer,
      %{
        demand: 0,
+       draining: false,
        receive_timer: nil,
        receive_interval: receive_interval,
        sqs_client: {sqs_client, client_opts}
@@ -233,11 +234,6 @@ defmodule BroadwaySQS.Producer do
   end
 
   @impl true
-  def handle_info(:receive_messages, %{receive_timer: nil} = state) do
-    {:noreply, [], state}
-  end
-
-  @impl true
   def handle_info(:receive_messages, state) do
     handle_receive_messages(%{state | receive_timer: nil})
   end
@@ -248,9 +244,12 @@ defmodule BroadwaySQS.Producer do
   end
 
   @impl Producer
-  def prepare_for_draining(%{receive_timer: receive_timer} = state) do
-    receive_timer && Process.cancel_timer(receive_timer)
-    {:noreply, [], %{state | receive_timer: nil}}
+  def prepare_for_draining(state) do
+    {:noreply, [], %{state | draining: true}}
+  end
+
+  defp handle_receive_messages(%{draining: true} = state) do
+    {:noreply, [], state}
   end
 
   defp handle_receive_messages(%{receive_timer: nil, demand: demand} = state) when demand > 0 do
