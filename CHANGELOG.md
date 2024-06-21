@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.4 (2024-06-21)
+
+  * Forward compatibility with Broadway v1.1
+
 ## v0.7.3 (2023-06-16)
 
   * Relax `nimble_options` dependency to accept `~> 1.0`
@@ -11,7 +15,7 @@
 ## v0.7.1 (2022-03-27)
 
   * Relax `nimble_options` dependency to accept `~> 0.4.0`
-   
+
 ## v0.7.0 (2021-08-30)
 
   * Add the following telemetry events:
